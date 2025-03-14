@@ -150,7 +150,7 @@
       { name: "Dashboard", label: "Dashboard", icon: HomeIcon, link: "/dashboard" },
       { name: "Kasir", label: "Kasir", icon: ShoppingCartIcon, link: "/kasir" },
       { name: "Penjualan", label: "Penjualan", icon: BanknotesIcon, link: "/penjualan" },
-      { name: "Stock", label: "Stock", icon: CubeIcon, link: "/stock" },
+      { name: "Stock", label: "Stock", icon: CubeIcon, link: "/stok" },
       { name: "Supplier", label: "Supplier", icon: StarIcon, link: "/supplier" }
     ];
 
