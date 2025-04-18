@@ -1,209 +1,299 @@
 <template>
-  <div class="min-h-screen bg-gray-100 flex">
-    <!-- Sidebar (Same as Dashboard) -->
-    <div 
-      :class="{'translate-x-0': isSidebarOpen, '-translate-x-full': !isSidebarOpen}"
-      class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 border-r"
-    >
-      <div class="p-6 flex items-center border-b">
-        <img :src="logo" alt="Logo" class="h-8 mr-2">
-        <span class="text-xl font-bold text-blue-700">NFZ</span>
-      </div>
-
-      <ul class="mt-4 space-y-1">
-        <li v-for="item in menuItems" :key="item.name">
-          <router-link 
-            :to="item.link" 
-            class="flex items-center px-6 py-3 space-x-3 rounded-lg transition"
-            :class="{'bg-blue-700 text-white': activeMenu === item.name, 'hover:bg-gray-100 text-gray-700': activeMenu !== item.name}"
-            @click="setActiveMenu(item.name)"
-          >
-            <component :is="item.icon" class="w-5 h-5" :class="{'text-white': activeMenu === item.name, 'text-gray-500': activeMenu !== item.name}"/>
-            <span class="font-medium">{{ item.label }}</span>
-          </router-link>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Main Content -->
-    <div class="flex-1 flex p-6">
-      <!-- Left Side: Product List -->
-      <div class="w-2/3 pr-4">
-        <div class="flex items-center justify-between mb-4">
-          <select class="border p-2 rounded">
-            <option>Daging</option>
-            <option>Sayur</option>
-            <option>Minuman</option>
-          </select>
-          <input type="text" placeholder="Search" class="border p-2 rounded w-1/3">
-        </div>
-
-        <div class="grid grid-cols-3 gap-4">
-          <div 
-            v-for="product in products" :key="product.id"
-            class="bg-white p-4 rounded-lg shadow-lg cursor-pointer"
-            @click="addToCart(product)"
-          >
-            <img :src="product.image" alt="Product Image" class="w-full h-28 object-cover">
-            <h3 class="mt-2 font-semibold">{{ product.name }}</h3>
-            <p class="text-gray-600 text-sm">{{ product.weight }}</p>
-            <p class="text-blue-600 font-bold">Rp{{ product.price.toLocaleString() }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Side: Shopping Cart / Order Summary -->
-      <div class="w-1/3 bg-white p-4 rounded-lg shadow-lg">
-        <h2 class="font-bold text-lg flex items-center">
-          <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h18M3 8h18M3 13h18M3 18h18"></path>
-          </svg>
-          Order Menu
-        </h2>
-
-        <div v-if="cart.length === 0" class="text-gray-500 mt-4">Your cart is empty</div>
-
-        <!-- If Pay Button is Pressed, Show Order Summary -->
-        <div v-else-if="isPaying">
-          <button @click="isPaying = false" class="flex items-center text-gray-600 font-semibold mb-4">
-            ← Kembali
-          </button>
-
-          <div v-for="(item, index) in cart" :key="index" class="flex justify-between p-2 border-b">
-          <div>
-            <h4 class="font-semibold">{{ item.name }}</h4>
-            <p class="text-gray-500 text-sm">{{ item.qty }} x Rp{{ item.price.toLocaleString() }}</p>
-          </div>
-          <!--  Dynamically update the total price per item -->
-          <p class="font-semibold">Rp{{ (item.price * item.qty).toLocaleString() }}</p>
-        </div>
-
-          <!-- Payment and Delivery Options -->
-          <div class="mt-4">
-            <label class="block text-sm font-semibold">Metode Pembayaran</label>
-            <select v-model="paymentMethod" class="border p-2 rounded w-full">
-              <option>Cash</option>
-              <option>QR</option>
-              <option>Credit Card</option>
-            </select>
-          </div>
-
-          <div class="mt-4">
-            <label class="block text-sm font-semibold">Metode Pick Up</label>
-            <select v-model="deliveryMethod" class="border p-2 rounded w-full">
-              <option value="pickup">Ambil Sendiri</option>
-            <option value="delivery">Diantar</option>
+  <AppLayout>
+    <div class="p-6 h-[calc(100vh-3rem)] overflow-hidden">
+      <div class="flex h-full">
+        <!-- LEFT: Product List -->
+        <div class="w-2/3 pr-4 overflow-y-auto">
+          <!-- Filter & Search -->
+          <div class="flex items-center justify-between mb-4 gap-4">
+            <select class="border border-[#1A327B] text-black font-semibold px-3 py-2 rounded-lg w-1/4">
+              <option>Daging</option>
+              <option>Sayur</option>
+              <option>Minuman</option>
             </select>
 
+            <div class="relative w-1/3">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="w-5 h-5 text-[#1A327B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
+                </svg>
+              </span>
+              <input type="text" placeholder="Search"
+                class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-full" />
+            </div>
           </div>
 
-          <div class="flex justify-between items-center mt-6 border-t pt-4">
-            <h3 class="font-bold text-lg">Total</h3>
-            <h3 class="font-bold text-lg">Rp{{ totalPrice.toLocaleString() }}</h3>
+          <!-- Product Grid -->
+          <div class="grid grid-cols-3 gap-4">
+            <div v-for="product in products" :key="product.id"
+              class="bg-white p-4 rounded-xl shadow hover:shadow-lg border border-gray-100 cursor-pointer transition"
+              @click="addToCart(product)">
+              <img :src="product.image" alt="Product Image" class="w-full h-28 object-contain" />
+              <h3 class="mt-2 font-semibold text-sm text-center text-gray-800">{{ product.name }}</h3>
+              <p class="text-gray-500 text-xs text-center">{{ product.weight }}</p>
+              <p class="text-[#1A327B] font-bold text-center">Rp{{ product.price.toLocaleString() }}</p>
+            </div>
           </div>
-
-          <button @click="proceedToNextStep" class="w-full bg-blue-700 text-white py-2 rounded mt-4">Check Out</button>
         </div>
 
-        <!-- Default Shopping Cart View -->
-        <div v-else>
-          <div v-for="(item, index) in cart" :key="index" class="flex items-center justify-between p-2 border-b">
-            <div class="flex items-center">
-              <img :src="item.image" alt="Product" class="w-12 h-12">
-              <div class="ml-3">
-                <h4 class="font-semibold">{{ item.name }}</h4>
-                <p class="text-gray-500 text-sm">Rp{{ item.price.toLocaleString() }}</p>
+        <!-- RIGHT: Cart / Payment Summary -->
+        <div class="w-1/3 bg-white p-4 rounded-xl shadow border border-[#1A327B] flex flex-col h-full">
+          <template v-if="!isPaying">
+            <h2 class="font-bold text-lg flex items-center text-black border-b pb-2 mb-4">
+              <svg class="w-6 h-6 mr-2 text-[#1A327B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 3h18M3 8h18M3 13h18M3 18h18" />
+              </svg>
+              Item Dipesan
+            </h2>
+
+            <div class="overflow-y-auto flex-1 pr-1">
+              <div v-if="cart.length === 0" class="text-gray-500 mt-4">Your cart is empty</div>
+              <div v-else>
+                <div v-for="(item, index) in cart" :key="index"
+                  class="flex items-center justify-between p-2 border rounded-lg border-[#1A327B] mb-3">
+                  <div class="flex items-center">
+                    <img :src="item.image" alt="Product" class="w-12 h-12 object-cover rounded" />
+                    <div class="ml-3">
+                      <h4 class="font-semibold text-sm text-gray-800">{{ item.name }}</h4>
+                      <p class="text-gray-500 text-sm">Rp. {{ item.price.toLocaleString() }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center">
+                    <button @click="decreaseQty(index)"
+                      class="px-3 py-1 bg-[#1A327B]/10 text-[#1A327B] rounded font-bold">-</button>
+                    <span class="mx-2 font-semibold">{{ item.qty }}</span>
+                    <button @click="increaseQty(index)"
+                      class="px-3 py-1 bg-[#1A327B]/10 text-[#1A327B] rounded font-bold">+</button>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="flex items-center">
-              <button @click="decreaseQty(index)" class="px-2 py-1 bg-gray-200 rounded">-</button>
-              <span class="mx-2">{{ item.qty }}</span>
-              <button @click="increaseQty(index)" class="px-2 py-1 bg-gray-200 rounded">+</button>
-            </div>
-          </div>
 
-          <div class="flex justify-between items-center mt-6 border-t pt-4">
-            <h3 class="font-bold text-lg">Rp{{ totalPrice.toLocaleString() }}</h3>
-            <button @click="isPaying = true" class="bg-blue-700 text-white px-4 py-2 rounded">Bayar</button>
-          </div>
+            <div class="border-t pt-4 mt-4">
+              <button @click="isPaying = true"
+                class="bg-[#1A327B] text-white w-full py-3 rounded-2xl font-semibold shadow flex justify-between items-center px-4">
+                <span>Bayar</span>
+                <span>Rp{{ totalPrice.toLocaleString() }}</span>
+              </button>
+            </div>
+          </template>
+
+          <!-- Payment Summary -->
+          <template v-else>
+            <h2 class="font-bold text-lg flex items-center text-black border-b pb-2 mb-4">
+              <button @click="isPaying = false"
+                class="rounded-full bg-gray-100 p-1 mr-2 shadow text-black hover:bg-gray-200">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              Kembali
+            </h2>
+
+            <div class="flex flex-col gap-4 flex-1 overflow-y-auto">
+              <div v-for="item in cart" :key="item.id"
+                class="flex justify-between text-sm text-black border-b pb-2">
+                <div>
+                  <div class="font-semibold">{{ item.name }}</div>
+                  <div class="text-gray-500">{{ item.qty }} x {{ item.price.toLocaleString() }}</div>
+                </div>
+                <div>Rp{{ (item.price * item.qty).toLocaleString() }}</div>
+              </div>
+
+              <!-- Metode Pembayaran -->
+              <div>
+                <label class="block text-gray-700 text-sm mb-1">Metode Pembayaran</label>
+                <select v-model="paymentMethod"
+                  class="w-full border px-3 py-2 rounded-lg font-semibold focus:ring-[#1A327B]">
+                  <option value="Cash">Cash</option>
+                  <option value="QRIS">QRIS</option>
+                </select>
+              </div>
+
+              <!-- Metode Pickup -->
+              <div>
+                <label class="block text-gray-700 text-sm mb-1">Metode Pick Up</label>
+                <select v-model="deliveryMethod" @change="handleDeliveryChange"
+                  class="w-full border px-3 py-2 rounded-lg font-semibold focus:ring-[#1A327B]">
+                  <option value="pickup">Ambil Sendiri</option>
+                  <option value="delivery">Diantar</option>
+                </select>
+                <div v-if="deliveryMethod === 'delivery' && selectedAddress" class="text-sm text-gray-600 mt-1">
+                  {{ selectedAddress }}
+                </div>
+              </div>
+
+              <div class="flex justify-between font-semibold border-t pt-2">
+                <span>Total</span>
+                <span>Rp{{ totalPrice.toLocaleString() }}</span>
+              </div>
+            </div>
+
+            <button @click="confirmPayment"
+              class="bg-[#1A327B] text-white w-full py-3 rounded-2xl font-semibold shadow mt-4">
+              Bayar
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <!-- POPUP: Cash -->
+      <div v-if="showCashPopup" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow w-96">
+          <h3 class="text-lg font-bold mb-4">Pembayaran Cash</h3>
+          <label class="block text-sm mb-1">Uang Diterima:</label>
+          <input v-model.number="receivedCash" type="number"
+            class="w-full border px-3 py-2 rounded-lg mb-4 focus:ring-[#1A327B]" />
+          <p v-if="receivedCash >= totalPrice" class="text-sm text-green-600 font-semibold">
+            Kembalian: Rp{{ (receivedCash - totalPrice).toLocaleString() }}
+          </p>
+          <p v-else class="text-sm text-red-500">Uang tidak cukup</p>
+          <button @click="finishCashPayment" :disabled="receivedCash < totalPrice"
+            class="mt-4 bg-[#1A327B] text-white w-full py-2 rounded-lg font-semibold shadow disabled:opacity-50">
+            Selesai
+          </button>
+        </div>
+      </div>
+
+      <!-- POPUP: QRIS -->
+      <div v-if="showQRPopup" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow w-96 text-center">
+          <h3 class="text-lg font-bold mb-4">Scan QRIS</h3>
+          <img src="/images/qris.png" alt="QRIS" class="w-64 mx-auto mb-4" />
+          <button @click="finishQRPayment"
+            class="mt-2 bg-[#1A327B] text-white w-full py-2 rounded-lg font-semibold shadow">
+            Selesai
+          </button>
+        </div>
+      </div>
+
+      <!-- POPUP: QRIS Done -->
+      <div v-if="showQRDone" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow w-96 text-center">
+          <h3 class="text-lg font-bold mb-2 text-green-600">Pembayaran QRIS Berhasil!</h3>
+          <p class="text-sm mb-4 text-gray-700">Terima kasih, pembayaran telah diterima.</p>
+          <button @click="resetCart"
+            class="mt-2 bg-[#1A327B] text-white w-full py-2 rounded-lg font-semibold shadow">
+            Tutup
+          </button>
+        </div>
+      </div>
+
+      <!-- POPUP: Cash Done -->
+      <div v-if="showCashDone" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow w-96 text-center">
+          <h3 class="text-lg font-bold mb-2 text-green-600">Pembayaran Cash Berhasil!</h3>
+          <p class="text-sm mb-4 text-gray-700">Terima kasih, pembayaran telah diterima.</p>
+          <button @click="resetCart"
+            class="mt-2 bg-[#1A327B] text-white w-full py-2 rounded-lg font-semibold shadow">
+            Tutup
+          </button>
         </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <script>
+import AppLayout from "@/components/Layout.vue";
 import { ref, computed } from "vue";
-import logoImage from "@/assets/image.png";
-import { useRouter } from "vue-router"; // Import Vue Router
-
+import { useRouter } from "vue-router";
 
 export default {
   name: "KasirPage",
+  components: { AppLayout },
   setup() {
     const router = useRouter();
-    const isSidebarOpen = ref(false);
     const isPaying = ref(false);
     const paymentMethod = ref("Cash");
-    const deliveryMethod = ref("Ambil Sendiri");
+    const deliveryMethod = ref("pickup");
+    const selectedAddress = ref(null);
 
-    const cart = ref([]);
+    const showCashPopup = ref(false);
+    const showCashDone = ref(false);
+    const showQRPopup = ref(false);
+    const showQRDone = ref(false);
+    const receivedCash = ref(0);
 
     const products = ref([
       { id: 1, name: "Nuget Kanzler", weight: "450g", price: 20000, image: "/images/nuget.png" },
-      { id: 2, name: "Sosis Kanzler", weight: "450g", price: 18000, image: "/images/sosis.png" },
     ]);
 
+    const cart = ref([]);
+
     const addToCart = (product) => {
-      const existingItem = cart.value.find((item) => item.id === product.id);
-      if (existingItem) {
-        existingItem.qty++;
-      } else {
-        cart.value.push({ ...product, qty: 1 });
-      }
+      const item = cart.value.find((i) => i.id === product.id);
+      if (item) item.qty++;
+      else cart.value.push({ ...product, qty: 1 });
     };
 
-    // Function to increase quantity
-    const increaseQty = (index) => {
-      if (cart.value[index]) {
-        cart.value[index].qty++;
-      }
-    };
-
-    // Function to decrease quantity
+    const increaseQty = (index) => cart.value[index].qty++;
     const decreaseQty = (index) => {
-      if (cart.value[index].qty > 1) {
-        cart.value[index].qty--;
-      } else {
-        cart.value.splice(index, 1); // Remove item if quantity is 0
+      if (cart.value[index].qty > 1) cart.value[index].qty--;
+      else cart.value.splice(index, 1);
+    };
+
+    const totalPrice = computed(() =>
+      cart.value.reduce((sum, item) => sum + item.price * item.qty, 0)
+    );
+
+    const handleDeliveryChange = () => {
+      if (deliveryMethod.value === "delivery" && !selectedAddress.value) {
+        router.push("/select-address");
       }
     };
 
-    const totalPrice = computed(() => {
-      return cart.value.reduce((sum, item) => sum + item.price * item.qty, 0);
-    });
-
-    const proceedToNextStep = () => {
-      if (deliveryMethod.value === "delivery") {
-        router.push("/select-address"); // Redirect to Address Selection
+    const confirmPayment = () => {
+      if (paymentMethod.value === "Cash") {
+        showCashPopup.value = true;
       } else {
-        router.push("/payment"); // Redirect to Payment Page
+        showQRPopup.value = true;
       }
+    };
+
+    const finishCashPayment = () => {
+      showCashPopup.value = false;
+      showCashDone.value = true;
+    };
+
+    const finishQRPayment = () => {
+      showQRPopup.value = false;
+      showQRDone.value = true;
+    };
+
+    const resetCart = () => {
+      cart.value = [];
+      isPaying.value = false;
+      showCashPopup.value = false;
+      showCashDone.value = false;
+      showQRPopup.value = false;
+      showQRDone.value = false;
+      receivedCash.value = 0;
     };
 
     return {
-      isSidebarOpen,
       isPaying,
       paymentMethod,
       deliveryMethod,
+      selectedAddress,
+      showCashPopup,
+      showCashDone,
+      showQRPopup,
+      showQRDone,
+      receivedCash,
       cart,
       products,
       addToCart,
-      totalPrice,
-      logo: logoImage,
-      proceedToNextStep,
+      increaseQty,
       decreaseQty,
-      increaseQty
+      totalPrice,
+      confirmPayment,
+      finishCashPayment,
+      finishQRPayment,
+      handleDeliveryChange,
+      resetCart,
     };
   },
 };

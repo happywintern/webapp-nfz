@@ -7,17 +7,14 @@ import Stock from '../views/Stock.vue';
 import Supplier from '../views/Supplier.vue';
 import Address from '../views/SelectAddress.vue';
 
-
-
 const routes = [
-  { path: '/', component: Login },
-  { path: '/dashboard', component: Dashboard },
-  { path: '/kasir', component: Products },
-  { path: '/penjualan', component: Sales },
-  { path: '/stok', component: Stock },
-  { path: '/supplier', component: Supplier },
-  { path: '/select-address', component: Address },
-
+  { path: '/', component: Login, name: 'Login' },
+  { path: '/dashboard', component: Dashboard, name: 'Dashboard' },
+  { path: '/kasir', component: Products, name: 'Kasir' },
+  { path: '/penjualan', component: Sales, name: 'Penjualan' },
+  { path: '/stok', component: Stock, name: 'Stock' },
+  { path: '/supplier', component: Supplier, name: 'Supplier' },
+  { path: '/select-address', component: Address, name: 'SelectAddress' },
 ];
 
 const router = createRouter({
