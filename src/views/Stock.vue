@@ -1,16 +1,36 @@
 <template>
   <AppLayout>
     <div class="p-6 bg-gray-100 min-h-screen">
+
+      <div class="flex justify-between items-center mb-4">
+    <!-- Left side: Filter Button -->
+    <select class="border border-[#1A327B] text-black font-semibold px-3 py-2 rounded-lg w-40">
+      <option>Daging</option>
+              <option>Sayur</option>
+              <option>Minuman</option>
+    </select>
+
+    <!-- Right side: Add Button and Search Bar -->
+    <div class="flex items-center space-x-2">
+      <!-- Add Button -->
+      <button class="add-btn flex items-center justify-center w-10 h-10 text-white rounded-lg">
+        <img src="@/assets/icons/add_button.svg" alt="Add" class="w-5 h-5" />
+      </button>
+
       <!-- Search Input -->
-      <!-- Search Input -->
-      <div class="relative mb-4 w-1/6">
+      <div class="relative w-1/6">
         <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
         <input
           type="text"
           placeholder="Search"
-          class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-full"
+          class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-40"
         />
-      </div>       <!-- Stock Table -->
+      </div>
+    </div>
+  </div>
+
+
+      <!-- Stock Table -->
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
         <table class="w-full text-sm">
           <thead class="text-left">
@@ -35,14 +55,11 @@
                 <td class="py-2 px-4">Rp{{ product.buyPrice.toLocaleString() }}</td>
                 <td class="py-2 px-4">Rp{{ product.sellPrice.toLocaleString() }}</td>
                 <td class="py-2 px-6 flex space-x-2 justify-center">
-                  <button @click="editProduct(product.id)" class="text-gray-600 hover:text-blue-600">
-                    <i class="fas fa-pen"></i>
+                  <button @click="viewProduct(product.id)" class="text-gray-600 hover:text-blue-600">
+                    <i class="fas fa-folder-open"></i>
                   </button>
                   <button @click="deleteProduct(product.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-trash"></i>
-                  </button>
-                  <button @click="viewProduct(product.id)" class="text-gray-600 hover:text-blue-600">
-                    <EyeIcon class="w-5 h-5" />
                   </button>
                 </td>
               </tr>
@@ -58,16 +75,20 @@
   <script>
   import { ref, computed } from "vue";
   import logoImage from "@/assets/image.png";
-  import { EyeIcon, HomeIcon, ShoppingCartIcon, BanknotesIcon, CubeIcon, StarIcon } from "@heroicons/vue/24/solid";
+  import { HomeIcon, ShoppingCartIcon, BanknotesIcon, CubeIcon, StarIcon } from "@heroicons/vue/24/solid";
   import AppLayout from "@/components/Layout.vue";
+  import { useRouter } from "vue-router";
+
 
   export default {
     name: "StockPage",
     components: {
-      EyeIcon,
       AppLayout
     },
     setup() {
+
+      const router = useRouter();
+
       const isSidebarOpen = ref(false);
       const activeMenu = ref("Stock");
       
@@ -112,9 +133,9 @@
         });
       });
   
-      const editProduct = (id) => {
-        alert(`Edit product: ${id}`);
-      };
+      const viewProduct = (id) => {
+      router.push({ name: 'ViewProduct', params: { id: id.toString() } });
+    };
   
       const deleteProduct = (id) => {
         if (confirm(`Are you sure you want to delete product ${id}?`)) {
@@ -122,10 +143,7 @@
         }
       };
   
-      const viewProduct = (id) => {
-        alert(`View product: ${id}`);
-      };
-  
+
       return {
         isSidebarOpen,
         activeMenu,
@@ -136,9 +154,8 @@
         categories,
         products,
         filteredProducts,
-        editProduct,
-        deleteProduct,
         viewProduct,
+        deleteProduct,
         toggleSidebar,
         setActiveMenu
       };
