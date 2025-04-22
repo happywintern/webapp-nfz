@@ -6,8 +6,8 @@ import Sales from '../views/Sales.vue';
 import Stock from '../views/Stock.vue';
 import Supplier from '../views/Supplier.vue';
 import Address from '../views/SelectAddress.vue';
-import ViewProduct from '../views/crud-stok/EditProduk.vue'
-
+import ViewProduct from '../views/crud-stok/EditProduk.vue';
+import Staff from '../views/Staff.vue';
 
 const routes = [
   { path: '/', component: Login, name: 'Login' },
@@ -23,6 +23,7 @@ const routes = [
     component: ViewProduct,
     props: true // This allows the route params to be passed as props
   },
+  {path: '/staff', component : Staff, name: 'Staff'},
 ];
 
 const router = createRouter({
