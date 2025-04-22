@@ -1,28 +1,37 @@
 <template>
   <AppLayout>
     <div class="p-6 bg-gray-100 min-h-screen">
-      <!-- Search Input -->
-      <!-- Search Input -->
-      <div class="relative mb-4 w-1/6">
-        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
-        <input
-          type="text"
-          placeholder="Search"
-          class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-full"
-        />
+      <!-- Search + Tambah -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+        <!-- Search Input -->
+        <div class="relative w-full sm:w-64">
+          <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+          <input
+            type="text"
+            placeholder="Search"
+            class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-full"
+          />
+        </div>
+
+        <!-- Tambah Button -->
+        <button
+          class="flex items-center gap-2 px-4 py-2 bg-[#1A327B] text-white rounded-lg hover:bg-blue-800 h-[42px]"
+        >
+          <i class="fas fa-address-book"></i>
+          Tambah
+        </button>
       </div>
 
-
-      <!-- Table Container -->
-      <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="text-left">
-            <tr class="text-gray-700">
+      <!-- Table -->
+      <div class="bg-white rounded-2xl shadow-lg overflow-x-auto">
+        <table class="w-full min-w-[800px] text-sm text-center">
+          <thead class="text-gray-700">
+            <tr>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">ID</th>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Name</th>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Email</th>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Contact</th>
-              <th class="py-4 px-6 font-semibold text-center border-b-2 border-[#1A327B]">Action</th>
+              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Action</th>
             </tr>
           </thead>
           <tbody class="text-gray-800">
@@ -64,10 +73,10 @@ export default {
   data() {
     return {
       suppliers: [
-        { id: "CO-001", name: "Nisal Wimalasooriya", email: "nisalwsy981@gmail.com", contact: "070 123 0999" },
-        { id: "CO-001", name: "Nisal Wimalasooriya", email: "nisalwsy981@gmail.com", contact: "070 123 0999" },
-        { id: "CO-001", name: "Nisal Wimalasooriya", email: "nisalwsy981@gmail.com", contact: "070 123 0999" },
-        { id: "CO-001", name: "Nisal Wimalasooriya", email: "nisalwsy981@gmail.com", contact: "070 123 0999" },
+        { id: "SUP-001", name: "Nisal Wimalasooriya", email: "nisalwsy981@gmail.com", contact: "070 123 0999" },
+        { id: "SUP-002", name: "Jane Smith", email: "jane@example.com", contact: "071 456 7890" },
+        { id: "SUP-003", name: "John Doe", email: "john@example.com", contact: "072 987 6543" },
+        { id: "SUP-004", name: "Sarah Johnson", email: "sarah@example.com", contact: "073 321 9876" },
       ],
     };
   },
@@ -80,15 +89,10 @@ export default {
         this.suppliers = this.suppliers.filter((supplier) => supplier.id !== id);
       }
     },
-    viewSupplier(id) {
-      alert(`View supplier: ${id}`);
-    },
   },
 };
 </script>
 
-<!-- Tambahkan ini di index.html atau main.js -->
-<!-- Font Awesome CDN -->
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 </style>
