@@ -61,6 +61,95 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal for Editing Product -->
+    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg w-[400px]">
+    <h2 class="text-xl font-bold text-[#1A327B] mb-4">Edit Produk</h2>
+    
+    <div class="space-y-3">
+      <input v-model="editedProduct.name" type="text" placeholder="Nama Produk" class="w-full border rounded px-3 py-2" />
+      <input v-model="editedProduct.category" type="text" placeholder="Kategori" class="w-full border rounded px-3 py-2" />
+      <input v-model="editedProduct.buyPrice" type="number" placeholder="Stok" class="w-full border rounded px-3 py-2" />
+      <input v-model="editedProduct.sellPrice" type="number" placeholder="Harga Beli" class="w-full border rounded px-3 py-2" />
+      <input type="file" @change="handleImageUpload" class="w-full" />
+    </div>
+
+    <div class="flex justify-end mt-4 space-x-2">
+      <button @click="showEditModal = false" class="px-4 py-2 bg-gray-300 text-black rounded">Batal</button>
+      <button @click="saveProductUpdate" class="px-4 py-2 bg-[#1A327B] text-white rounded">Simpan</button>
+    </div>
+  </div>
+</div>
+<!-- <div
+  v-if="showEditModal"
+  class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-lg p-6 w-full max-w-md">
+    <h2 class="text-xl font-semibold mb-4">Edit Produk</h2>
+
+    <div class="mb-4">
+      <label class="block mb-1 font-medium">Nama</label>
+      <input
+        v-model="editedProduct.name"
+        type="text"
+        class="w-full border rounded px-3 py-2"
+      />
+    </div>
+
+    <div class="mb-4">
+      <label class="block mb-1 font-medium">Kategori</label>
+      <input
+        v-model="editedProduct.category"
+        type="text"
+        class="w-full border rounded px-3 py-2"
+      />
+    </div>
+
+    <div class="mb-4">
+      <label class="block mb-1 font-medium">Harga Beli</label>
+      <input
+        v-model="editedProduct.buyPrice"
+        type="text"
+        class="w-full border rounded px-3 py-2"
+      />
+    </div>
+
+    <div class="mb-4">
+      <label class="block mb-1 font-medium">Harga Jual</label>
+      <input
+        v-model="editedProduct.sellPrice"
+        type="text"
+        class="w-full border rounded px-3 py-2"
+      />
+    </div>
+
+    <div class="mb-4">
+      <label class="block mb-1 font-medium">Ganti Gambar</label>
+      <input
+        type="file"
+        @change="handleImageUpload"
+        class="w-full"
+      />
+    </div>
+
+    <div class="flex justify-end space-x-3">
+      <button
+        @click="showEditModal = false"
+        class="bg-gray-300 text-black px-4 py-2 rounded-lg"
+      >
+        Batal
+      </button>
+      <button
+        @click="saveProductUpdate"
+        class="bg-blue-700 text-white px-4 py-2 rounded-lg"
+      >
+        Simpan
+      </button>
+    </div>
+  </div>
+</div> -->
+
   </AppLayout>
 </template>
 
@@ -82,15 +171,24 @@
     },
     data() {
       return {
-        product: {
-          name: '',
-          category: '',
-          buyPrice: '',
-          sellPrice: '',
-          image: ''
-        },
-        stockData: []
-      };
+    showEditModal: false,
+    product: {
+      name: '',
+      category: '',
+      buyPrice: '',
+      sellPrice: '',
+      image: ''
+    },
+    editedProduct: {
+      name: '',
+      category: '',
+      buyPrice: '',
+      sellPrice: '',
+      image: ''
+    },
+    stockData: []
+  };
+
     },
     created() {
       // Fetch the product data when the component is created
@@ -124,22 +222,9 @@
         ];
       },
       updateProduct() {
-        // Here you would typically make an API call to update the product
-        // For example:
-        // axios.put(`/api/products/${this.id}`, this.product)
-        //   .then(response => {
-        //     // Show success message
-        //     alert('Product updated successfully!');
-        //     // Return to stock page
-        //     this.$router.push('/stock');
-        //   })
-        //   .catch(error => {
-        //     console.error('Error updating product:', error);
-        //   });
-        
-        // For now, we'll just simulate success
-        alert('Product updated successfully!');
-        this.$router.push('/stock');
+        // Show modal and copy product data to edit form
+    this.editedProduct = { ...this.product };
+    this.showEditModal = true;
       },
       editStock(item) {
         // Handle editing stock item

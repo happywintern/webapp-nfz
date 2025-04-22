@@ -13,7 +13,7 @@
     <!-- Right side: Add Button and Search Bar -->
     <div class="flex items-center space-x-2">
       <!-- Add Button -->
-      <button class="add-btn flex items-center justify-center w-10 h-10 text-white rounded-lg">
+      <button  @click="showAddModal = true" class="add-btn flex items-center justify-center w-10 h-10 text-white rounded-lg">
         <img src="@/assets/icons/add_button.svg" alt="Add" class="w-5 h-5" />
       </button>
 
@@ -54,7 +54,7 @@
                 <td class="py-2 px-4">{{ product.stock }}</td>
                 <td class="py-2 px-4">Rp{{ product.buyPrice.toLocaleString() }}</td>
                 <td class="py-2 px-4">Rp{{ product.sellPrice.toLocaleString() }}</td>
-                <td class="py-2 px-6 flex space-x-2 justify-center">
+                <td class="py-2 px-6 flex space-x-2 justify-center py-2">
                   <button @click="viewProduct(product.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-folder-open"></i>
                   </button>
@@ -67,6 +67,7 @@
           </table>
         </div>
       </div>
+      
   
   </AppLayout>
 
@@ -142,6 +143,39 @@
           products.value = products.value.filter(product => product.id !== id);
         }
       };
+
+      const showAddModal = ref(false);
+
+      const newProduct = ref({
+        name: '',
+        category: '',
+        stock: 0,
+        buyPrice: 0,
+        sellPrice: 0,
+        image: null
+      });
+
+      const handleImageUpload = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        newProduct.value.image = URL.createObjectURL(file);
+      }
+    };
+
+    const addProduct = () => {
+      const id = products.value.length + 1;
+      products.value.push({ id, ...newProduct.value });
+      showAddModal.value = false;
+      newProduct.value = {
+        name: '',
+        category: '',
+        stock: 0,
+        buyPrice: 0,
+        sellPrice: 0,
+        image: null
+      };
+    };
+
   
 
       return {
@@ -157,7 +191,11 @@
         viewProduct,
         deleteProduct,
         toggleSidebar,
-        setActiveMenu
+        setActiveMenu,
+        showAddModal,
+        newProduct,
+        handleImageUpload,
+        addProduct,
       };
     }
   };

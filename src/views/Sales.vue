@@ -58,6 +58,11 @@
                   <button @click="deleteSale(transaction.id)" class="text-gray-600 hover:text-red-600">
                     <i class="fas fa-trash"></i>
                   </button>
+                  <!-- View Transaction Details Button (custom icon) -->
+                  <button @click="viewDetails(transaction.id)" class="text-gray-600 hover:text-green-600">
+                    <img src="@/assets/icons/vertical_split.svg" alt="View" class="w-5 h-5" />
+                  </button>
+
                 </div>
               </td>
             </tr>
