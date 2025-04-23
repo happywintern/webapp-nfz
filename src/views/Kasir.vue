@@ -7,8 +7,8 @@
           <!-- Filter & Search -->
           <div class="flex items-center justify-between mb-4 gap-4">
             <select class="border border-[#1A327B] text-black font-semibold px-3 py-2 rounded-lg w-1/4">
-              <option>Daging</option>
-              <option>Sayur</option>
+              <option>Nugget</option>
+              <option>Sosis</option>
               <option>Minuman</option>
             </select>
 
@@ -218,7 +218,18 @@ export default {
     const receivedCash = ref(0);
 
     const products = ref([
-      { id: 1, name: "Nuget Kanzler", weight: "450g", price: 20000, image: "/images/nuget.png" },
+      { id: 1, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 2, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 3, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 4, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 5, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 6, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 7, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 8, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 9, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 10, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 11, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
+      { id: 12, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
     ]);
 
     const cart = ref([]);

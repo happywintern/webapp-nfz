@@ -54,7 +54,7 @@
                 <td class="py-2 px-4">{{ product.stock }}</td>
                 <td class="py-2 px-4">Rp{{ product.buyPrice.toLocaleString() }}</td>
                 <td class="py-2 px-4">Rp{{ product.sellPrice.toLocaleString() }}</td>
-                <td class="py-2 px-6 flex space-x-2 justify-center">
+                <td class="py-2 px-6 flex space-x-2 justify-center py-2">
                   <button @click="viewProduct(product.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-folder-open"></i>
                   </button>
@@ -67,27 +67,7 @@
           </table>
         </div>
       </div>
-      <!-- Add Product Modal -->
-<div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-  <div class="bg-white p-6 rounded-lg w-[400px]">
-    <h2 class="text-xl font-bold text-[#1A327B] mb-4">Tambah Produk</h2>
-    
-    <div class="space-y-3">
-      <input v-model="newProduct.name" type="text" placeholder="Nama Produk" class="w-full border rounded px-3 py-2" />
-      <input v-model="newProduct.category" type="text" placeholder="Kategori" class="w-full border rounded px-3 py-2" />
-      <input v-model="newProduct.stock" type="number" placeholder="Stok" class="w-full border rounded px-3 py-2" />
-      <input v-model="newProduct.buyPrice" type="number" placeholder="Harga Beli" class="w-full border rounded px-3 py-2" />
-      <input v-model="newProduct.sellPrice" type="number" placeholder="Harga Jual" class="w-full border rounded px-3 py-2" />
-      <input type="file" @change="handleImageUpload" class="w-full" />
-    </div>
-
-    <div class="flex justify-end mt-4 space-x-2">
-      <button @click="showAddModal = false" class="px-4 py-2 bg-gray-300 text-black rounded">Batal</button>
-      <button @click="addProduct" class="px-4 py-2 bg-[#1A327B] text-white rounded">Simpan</button>
-    </div>
-  </div>
-</div>
-
+      
   
   </AppLayout>
 
@@ -127,9 +107,9 @@
       const searchQuery = ref("");
   
       const products = ref([
-        { id: 1, name: "Nuget Kanzler", category: "Frozen Food", stock: 20, buyPrice: 20000, sellPrice: 25000, image: "/images/nuget.png" },
-        { id: 2, name: "Sosis Kanzler", category: "Frozen Food", stock: 30, buyPrice: 18000, sellPrice: 22000, image: "/images/sosis.png" },
-        { id: 3, name: "Aqua 600ml", category: "Drinks", stock: 50, buyPrice: 5000, sellPrice: 7000, image: "/images/aqua.png" },
+        { id: 1, name: "Nuget Kanzler", category: "Frozen Food", stock: 20, buyPrice: 20000, sellPrice: 25000, image: require('@/assets/Product.jpeg')},
+        { id: 1, name: "Nuget Kanzler", category: "Frozen Food", stock: 20, buyPrice: 20000, sellPrice: 25000, image: require('@/assets/Product.jpeg')},
+        { id: 1, name: "Nuget Kanzler", category: "Frozen Food", stock: 20, buyPrice: 20000, sellPrice: 25000, image: require('@/assets/Product.jpeg')},
       ]);
   
 
