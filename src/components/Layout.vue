@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-100">
     <!-- Topbar -->
-    <nav class="bg-white shadow-md py-4 px-6 flex items-center justify-between">
+    <nav class="bg-white shadow-md py-4 px-6 flex items-center justify-between z-50 relative">
       <div class="flex items-center">
         <button @click="toggleSidebar" class="text-gray-700 hover:text-gray-900 focus:outline-none">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -12,18 +12,14 @@
       </div>
     </nav>
 
-    <!-- Layout with sidebar and content -->
-    <div class="flex transition-all duration-300 ease-in-out" :class="{'ml-64': isSidebarOpen, 'ml-0': !isSidebarOpen}">
-      <!-- Sidebar -->
-      <div 
-        :class="{'translate-x-0': isSidebarOpen, '-translate-x-full': !isSidebarOpen}"
-        class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 border-r"
-      >
-        <!-- Sidebar Content -->
-        <div class="p-6 flex items-center border-b relative">
-          <!-- Logo Sidebar - stays in place when sidebar is toggled -->
-          <img :src="logo" alt="Logo" class="h-10 absolute top-0 left-0 ml-6">
-        </div>
+      <!-- Layout with sidebar and content -->
+      <div class="flex transition-all duration-300 ease-in-out" :class="{'ml-64': isSidebarOpen, 'ml-0': !isSidebarOpen}">
+        <!-- Sidebar -->
+        <div 
+          :class="{'translate-x-0': isSidebarOpen, '-translate-x-full': !isSidebarOpen}"
+          class="fixed top-16 left-0 h-[calc(100%-4rem)] w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-40 border-r"
+        >
+
 
         <ul class="mt-4 space-y-1">
           <li v-for="item in menuItems" :key="item.name">
@@ -96,11 +92,10 @@ export default {
 </script>
 
 <style scoped>
-/* Styling to keep logo on sidebar fixed in place */
 .sidebar-logo {
   position: absolute;
   top: 0;
   left: 0;
-  margin-left: 24px; /* Same spacing as navbar */
+  margin-left: 24px;
 }
 </style>
