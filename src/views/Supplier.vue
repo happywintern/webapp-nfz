@@ -15,6 +15,7 @@
 
         <!-- Tambah Button -->
         <button
+          @click="showAddModal = true"
           class="flex items-center gap-2 px-4 py-2 bg-[#1A327B] text-white rounded-lg hover:bg-blue-800 h-[42px]"
         >
           <i class="fas fa-address-book"></i>
@@ -46,7 +47,7 @@
               <td class="py-4 px-6">{{ supplier.contact }}</td>
               <td class="py-4 px-6">
                 <div class="flex justify-center items-center space-x-4">
-                  <button @click="openEditModal(supplier.id)" class="text-gray-600 hover:text-blue-600">
+                  <button @click="openEditModal(supplier)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-pen"></i>
                   </button>
                   <button @click="deleteSupplier(supplier.id)" class="text-gray-600 hover:text-red-600">
@@ -59,56 +60,83 @@
         </table>
       </div>
     </div>
-    <!-- Edit Supplier Modal -->
-<div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-    <h2 class="text-lg font-semibold mb-4 text-[#1A327B]">Edit Supplier</h2>
-    
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-semibold">ID</label>
-        <input type="text" v-model="editedSupplier.id" disabled class="w-full px-4 py-2 border rounded bg-gray-100" />
-      </div>
 
-      <div>
-        <label class="block text-sm font-semibold">Name</label>
-        <input type="text" v-model="editedSupplier.name" class="w-full px-4 py-2 border rounded" />
-      </div>
+    <!-- Modal Tambah Supplier -->
+    <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 class="text-lg font-semibold mb-4 text-[#1A327B]">Tambah Supplier</h2>
 
-      <div>
-        <label class="block text-sm font-semibold">Email</label>
-        <input type="email" v-model="editedSupplier.email" class="w-full px-4 py-2 border rounded" />
-      </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold">Name</label>
+            <input type="text" v-model="newSupplier.name" class="w-full px-4 py-2 border rounded" />
+          </div>
 
-      <div>
-        <label class="block text-sm font-semibold">Contact</label>
-        <input type="text" v-model="editedSupplier.contact" class="w-full px-4 py-2 border rounded" />
+          <div>
+            <label class="block text-sm font-semibold">Email</label>
+            <input type="email" v-model="newSupplier.email" class="w-full px-4 py-2 border rounded" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold">Contact</label>
+            <input type="text" v-model="newSupplier.contact" class="w-full px-4 py-2 border rounded" />
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end space-x-2">
+          <button @click="showAddModal = false" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+          <button @click="addSupplier" class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800">Tambah</button>
+        </div>
       </div>
     </div>
 
-    <div class="mt-6 flex justify-end space-x-2">
-      <button @click="showEditModal = false" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
-      <button @click="saveSupplierEdit" class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800">Simpan</button>
-    </div>
-  </div>
-</div>
+    <!-- Modal Edit Supplier -->
+    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 class="text-lg font-semibold mb-4 text-[#1A327B]">Edit Supplier</h2>
 
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold">ID</label>
+            <input type="text" v-model="editedSupplier.id" disabled class="w-full px-4 py-2 border rounded bg-gray-100" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold">Name</label>
+            <input type="text" v-model="editedSupplier.name" class="w-full px-4 py-2 border rounded" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold">Email</label>
+            <input type="email" v-model="editedSupplier.email" class="w-full px-4 py-2 border rounded" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold">Contact</label>
+            <input type="text" v-model="editedSupplier.contact" class="w-full px-4 py-2 border rounded" />
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end space-x-2">
+          <button @click="showEditModal = false" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+          <button @click="saveSupplierEdit" class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800">Simpan</button>
+        </div>
+      </div>
+    </div>
   </AppLayout>
 </template>
 
 <script>
 import AppLayout from "@/components/Layout.vue";
 import { ref } from "vue";
-// import { useRouter } from "vue-router";
-
 
 export default {
   name: "SupplierPage",
   components: {
     AppLayout,
   },
- 
-  setup(){
+  setup() {
+    const showAddModal = ref(false);
     const showEditModal = ref(false);
 
     const suppliers = ref([
@@ -118,39 +146,67 @@ export default {
       { id: "SUP-004", name: "Sarah Johnson", email: "sarah@example.com", contact: "073 321 9876" },
     ]);
 
-const editedSupplier = ref({
-  id: '',
-  name: '',
-  email: '',
-  contact: ''
-});
+    const newSupplier = ref({
+      name: '',
+      email: '',
+      contact: ''
+    });
 
-const openEditModal = (supplier) => {
-  editedSupplier.value = { ...supplier };
-  showEditModal.value = true;
-};
+    const editedSupplier = ref({
+      id: '',
+      name: '',
+      email: '',
+      contact: ''
+    });
 
-const saveSupplierEdit = () => {
-  // You can call an API here or update locally
-  const index = suppliers.value.findIndex(s => s.id === editedSupplier.value.id);
-  if (index !== -1) {
-    suppliers.value[index] = { ...editedSupplier.value };
+    const addSupplier = () => {
+      if (newSupplier.value.name) {
+        const lastId = suppliers.value.length
+          ? Math.max(...suppliers.value.map(s => parseInt(s.id.replace('SUP-', ''))))
+          : 0;
+        const nextId = `SUP-${String(lastId + 1).padStart(3, '0')}`;
+        const supplierToAdd = { id: nextId, ...newSupplier.value };
+
+        suppliers.value.push(supplierToAdd);
+        newSupplier.value = { name: '', email: '', contact: '' };
+        showAddModal.value = false;
+      } else {
+        alert("Nama wajib diisi");
+      }
+    };
+
+    const openEditModal = (supplier) => {
+      editedSupplier.value = { ...supplier };
+      showEditModal.value = true;
+    };
+
+    const saveSupplierEdit = () => {
+      const index = suppliers.value.findIndex(s => s.id === editedSupplier.value.id);
+      if (index !== -1) {
+        suppliers.value[index] = { ...editedSupplier.value };
+      }
+      showEditModal.value = false;
+    };
+
+    const deleteSupplier = (id) => {
+  const supplier = suppliers.value.find(s => s.id === id);
+  if (confirm(`Yakin ingin menghapus supplier "${supplier.name}"?`)) {
+    suppliers.value = suppliers.value.filter(s => s.id !== id);
   }
-  showEditModal.value = false;
 };
 
-return {
-  showEditModal,
-  suppliers,
-  editedSupplier,
-  openEditModal,
-  saveSupplierEdit
-};
-
-
+    return {
+      showAddModal,
+      showEditModal,
+      suppliers,
+      newSupplier,
+      editedSupplier,
+      addSupplier,
+      openEditModal,
+      saveSupplierEdit,
+      deleteSupplier
+    };
   },
-  
-  
 };
 </script>
 
