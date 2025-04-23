@@ -71,25 +71,31 @@
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
           <!-- Kiri: Tabel Pesanan -->
-          <div class="overflow-x-auto bg-gray-50 p-4 rounded-xl shadow">
-            <table class="min-w-full table-auto">
-              <thead>
-                <tr class="bg-blue-100">
-                  <th class="p-2 text-left">Nama Pemesan</th>
-                  <th class="p-2 text-left">Alamat</th>
-                  <th class="p-2 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="order in orders" :key="order.id">
-                  <td class="p-2">{{ order.name }}</td>
-                  <td class="p-2">{{ order.address }}</td>
-                  <td class="p-2">{{ order.status }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
+          <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50 text-gray-700 font-semibold">
+              <tr>
+                <th class="px-4 py-2 text-left">Nama Pemesan</th>
+                <th class="px-4 py-2 text-left">Alamat</th>
+                <th class="px-4 py-2 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-100">
+              <tr v-for="order in orders" :key="order.id">
+                <td class="px-4 py-2 font-medium text-blue-600">{{ order.name }}</td>
+                <td class="px-4 py-2">{{ order.address }}</td>
+                <td class="px-4 py-2">
+                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v4m0 8v4m8-8h-4m-8 0H4" />
+                    </svg>
+                    {{ order.status }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+    </div>
           <!-- Kanan: Peta Dinamis -->
           <div id="map" class="w-full h-64 mt-6 md:mt-0"></div>
         </div>
