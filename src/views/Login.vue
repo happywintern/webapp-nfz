@@ -5,9 +5,9 @@
       <form @submit.prevent="login">
         <div class="mb-4">
           <input
-            v-model="username"
+            v-model="email"
             type="text"
-            placeholder="Username"
+            placeholder="Email"
             class="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
@@ -33,23 +33,49 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
-  name: "LoginPage", // ✅ FIX: Change component name to multi-word
+  name: "LoginPage",
   data() {
     return {
-      username: "",
+      email: "",
       password: "",
     };
   },
   methods: {
-    login() {
-      if (this.username && this.password) {
-        // Redirect to dashboard
-        this.$router.push("/dashboard");
-      } else {
+    async login() {
+      if (!this.email || !this.password) {
         alert("Please enter both username and password.");
+        return;
+      }
+      try {
+        const response = await axios.post(
+          "https://cc5w3b0r-8000.asse.devtunnels.ms/api/login",
+          {
+            email: this.email,
+            password: this.password,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            withCredentials: true, // <--- Tambahin ini biar CORS bisa kirim token/cookie
+          }
+        );
+
+        console.log("Login success:", response.data);
+
+        // Simpan token kalau dibutuhin
+        // localStorage.setItem("token", response.data.token);
+
+        this.$router.push("/dashboard");
+      } catch (error) {
+        console.error("Login failed:", error);
+        alert("Login failed. Please check your credentials.");
       }
     },
   },
+
 };
 </script>

@@ -68,25 +68,41 @@
             </tbody>
           </table>
         </div>
-
-        <!-- Delete Confirmation Modal -->
-<div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg shadow-lg p-6 w-80">
-    <h2 class="text-lg font-semibold text-gray-800 mb-4">Konfirmasi Hapus</h2>
-    <p class="text-gray-600 mb-6">Apakah kamu yakin ingin menghapus item ini?</p>
-    <div class="flex justify-end gap-2">
-      <button @click="closeDeleteModal" class="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded">
-        Batal
-      </button>
-      <button @click="confirmDelete" class="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded">
-        Hapus
-      </button>
-    </div>
-  </div>
-</div>
-
       </div>
       <!-- Add Product Modal -->
+
+      <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 class="text-lg font-semibold mb-4 text-[#1A327B]">Edit Supplier</h2>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold">ID</label>
+            <input type="text" v-model="product.name" disabled class="w-full px-4 py-2 border rounded bg-gray-100" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold">Name</label>
+            <input type="text" v-model="product.category " class="w-full px-4 py-2 border rounded" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold">Email</label>
+            <input type="email" v-model="editedSupplier.email" class="w-full px-4 py-2 border rounded" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold">Contact</label>
+            <input type="text" v-model="editedSupplier.contact" class="w-full px-4 py-2 border rounded" />
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end space-x-2">
+          <button @click="showEditModal = false" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+          <button @click="saveSupplierEdit" class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800">Simpan</button>
+        </div>
+      </div>
+    </div>
 <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
   <div class="bg-white p-6 rounded-lg w-[400px]">
     <h2 class="text-xl font-bold text-[#1A327B] mb-4">Tambah Produk</h2>
@@ -106,7 +122,6 @@
     </div>
   </div>
 </div>
-
 
   
   </AppLayout>
