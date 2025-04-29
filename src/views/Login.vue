@@ -31,51 +31,96 @@
     </div>
   </div>
 </template>
-
 <script>
 import axios from "axios";
 
 export default {
   name: "LoginPage",
+
   data() {
     return {
       email: "",
       password: "",
     };
   },
+
   methods: {
     async login() {
       if (!this.email || !this.password) {
-        alert("Please enter both username and password.");
+        alert("Please enter both email and password.");
         return;
       }
+
       try {
+        console.log("Sending credentials:", {
+          email: this.email,
+          password: this.password,
+        });
+
         const response = await axios.post(
-          "https://cc5w3b0r-8000.asse.devtunnels.ms/api/login",
+          'https://nurulfrozen.dgeo.id/api/login',           
           {
-            email: this.email,
-            password: this.password,
-          },
+        email: this.email,
+        password: this.password
+      },
+
           {
             headers: {
               "Content-Type": "application/json",
+              // Optional: Add Accept header if your backend expects it
+              "Accept": "application/json",
             },
-            withCredentials: true, // <--- Tambahin ini biar CORS bisa kirim token/cookie
           }
         );
 
         console.log("Login success:", response.data);
 
-        // Simpan token kalau dibutuhin
-        // localStorage.setItem("token", response.data.token);
-
-        this.$router.push("/dashboard");
+        if (response.data && response.data.data?.access_token) {
+          localStorage.setItem("token", response.data.data?.access_token);
+          this.$router.push("/dashboard");
+        } else {
+          alert("Login succeeded but no token received.");
+        }
       } catch (error) {
         console.error("Login failed:", error);
-        alert("Login failed. Please check your credentials.");
+
+        if (error.response) {
+          // Log backend message (if any)
+          console.error("Server response:", error.response.data);
+
+          // Show exact message from backend if available
+          alert(error.response?.data.message || "Invalid credentials.");
+        } else {
+          alert("Unable to connect to server.");
+        }
+      }
+    },
+
+    async fetchData() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("You are not logged in.");
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          "https://7501-2404-c0-5c60-00-1dc0-b852.ngrok-free.app",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+            },
+          }
+        );
+
+        console.log("Data fetched:", response.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("Failed to fetch data. Please try again.");
       }
     },
   },
-
 };
 </script>

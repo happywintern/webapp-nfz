@@ -112,7 +112,6 @@ import {
   ChartBarIcon,
   ArrowUturnLeftIcon,
   ShoppingBagIcon,
-    ArrowTrendingUpIcon
 } from "@heroicons/vue/24/solid";
 
 export default {
@@ -121,8 +120,7 @@ export default {
     AppLayout,
     ChartBarIcon,
     ArrowUturnLeftIcon,
-    ShoppingBagIcon,
-    ArrowTrendingUpIcon,
+    ShoppingBagIcon
     
   },
   setup() {

@@ -27,11 +27,11 @@
         <table class="w-full min-w-[800px] text-sm text-center">
           <thead class="text-gray-700">
             <tr>
-              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">ID</th>
+              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">No.</th>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Name</th>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Role</th>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Email</th>
-              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Last Active</th>
+              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Phone</th>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Action</th>
             </tr>
           </thead>
@@ -45,14 +45,9 @@
               <td class="py-4 px-6">{{ staff.name }}</td>
               <td class="py-4 px-6">{{ staff.role }}</td>
               <td class="py-4 px-6">{{ staff.email }}</td>
-              <td class="py-4 px-6">
-                <span
-                  :class="['px-3 py-1 rounded-full text-sm font-semibold', getLoginStatusColor(staff.lastActive, staff.isOnline)]"
-                >
-                  {{ staff.isOnline ? 'Online' : staff.lastActive }}
-                </span>
-              </td>
-              <td class="py-4 px-6">
+              <td class="py-4 px-6">{{ staff.phone }}</td>
+
+                            <td class="py-4 px-6">
                 <div class="flex justify-center items-center space-x-4">
                   <button @click="editStaff(staff.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-pen"></i>
@@ -71,8 +66,9 @@
     <!-- Modal Tambah Staff -->
     <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h2 class="text-lg font-semibold mb-4 text-[#1A327B]">Tambah Staff</h2>
-        <div class="space-y-4">
+        <h2 class="text-lg font-semibold mb-4 text-[#1A327B]">
+  {{ isEditMode ? 'Edit Staff' : 'Tambah Staff' }}
+</h2>        <div class="space-y-4">
           <div>
             <label class="block text-sm font-semibold">Name</label>
             <input type="text" v-model="newStaff.name" class="w-full px-4 py-2 border rounded" />
@@ -85,17 +81,24 @@
             <label class="block text-sm font-semibold">Email</label>
             <input type="email" v-model="newStaff.email" class="w-full px-4 py-2 border rounded" />
           </div>
+          <div>
+            <label class="block text-sm font-semibold">Phone Number</label>
+            <input type="email" v-model="newStaff.phone" class="w-full px-4 py-2 border rounded" />
+          </div>
         </div>
         <div class="mt-6 flex justify-end space-x-2">
-          <button @click="showAddModal = false" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
-          <button @click="addStaff" class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800">Tambah</button>
-        </div>
+          <button @click="resetModal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+          <button 
+  @click="isEditMode ? updateStaff() : addStaff()" 
+  class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800">
+  {{ isEditMode ? 'Simpan Perubahan' : 'Tambah' }}
+</button>        </div>
       </div>
     </div>
   </AppLayout>
 </template>
-
 <script>
+import axios from "axios";
 import AppLayout from "@/components/Layout.vue";
 
 export default {
@@ -105,49 +108,126 @@ export default {
   },
   data() {
     return {
-      staffList: [
-        {
-          id: "CO-001",
-          name: "Nisal Wimalasooriya",
-          role: "Staff",
-          email: "nisalwsy981@gmail.com",
-          lastActive: "2025-04-22",
-          isOnline: true,
-        },
-        {
-          id: "CO-002",
-          name: "Jane Doe",
-          role: "Admin",
-          email: "janedoe@example.com",
-          lastActive: "2025-04-21",
-          isOnline: false,
-        },
-        {
-          id: "CO-003",
-          name: "Jack Smith",
-          role: "Staff",
-          email: "jack@example.com",
-          lastActive: "2025-04-15",
-          isOnline: false,
-        },
-      ],
+      staffList: [],
       showAddModal: false,
+      isEditMode: false,
+      editStaffId: null,
       newStaff: {
         name: "",
         role: "",
         email: "",
       },
+
     };
   },
+  mounted() {
+    this.fetchStaff();
+  },
   methods: {
-    editStaff(id) {
-      alert(`Edit staff: ${id}`);
+    async fetchStaff() {
+  try {
+    const token = localStorage.getItem('token');
+    console.log('Token from localStorage:', token);
+
+    if (!token) {
+      alert('No token found, please login first.');
+      this.$router.push('/stok'); 
+      return;
+    }
+
+    const response = await axios.get('https://nurulfrozen.dgeo.id/api/users', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json', // <-- this fixes your problem!
+      },
+    });
+
+    console.log('Real API response:', response.data);
+
+    if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+      console.error('Received HTML instead of JSON. Probably not authenticated.');
+      alert('Session expired or unauthorized. Please login again.');
+      this.$router.push('/');
+      return;
+    }
+
+    this.staffList = response.data.map(user => ({
+      id: user.user_id,
+      name: user.name,
+      role: user.role,
+      email: user.email,
+      phone: user.phone,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+      lastActive: user.updated_at,
+      isOnline: false,
+    }));
+
+    
+
+  } catch (error) {
+    console.error('Failed to fetch staff:', error);
+    alert('Gagal mengambil data staff.');
+  }
+},
+
+resetModal() {
+      this.newStaff = { name: "", role: "", email: "", phone: "" };
+      this.showAddModal = false;
+      this.isEditMode = false;
+      this.editStaffId = null;
     },
-    deleteStaff(id) {
-      if (confirm(`Yakin ingin menghapus staff dengan ID ${id}?`)) {
-        this.staffList = this.staffList.filter((staff) => staff.id !== id);
+
+editStaff(id) {
+  const staff = this.staffList.find(s => s.id === id);
+  if (!staff) {
+    alert('Staff not found.');
+    return;
+  }
+
+  this.newStaff = {
+    name: staff.name,
+    role: staff.role,
+    email: staff.email,
+    phone: staff.phone
+  };
+
+  this.editStaffId = id;
+  this.isEditMode = true;
+  this.showAddModal = true;
+},
+
+
+    async deleteStaff(id) {
+  if (!confirm(`Yakin ingin menghapus staff dengan ID ${id}?`)) return;
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('No token found, please login first.');
+    this.$router.push('/login');
+    return;
+  }
+
+  try {
+    const response = await axios.delete(`https://nurulfrozen.dgeo.id/api/users/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       }
-    },
+    });
+
+    console.log('Delete response:', response.data);
+
+    // Hapus dari daftar lokal jika berhasil
+    this.staffList = this.staffList.filter((staff) => staff.id !== id);
+
+    alert('Staff berhasil dihapus.');
+
+  } catch (error) {
+    console.error('Gagal menghapus staff:', error);
+    alert('Gagal menghapus staff dari server.');
+  }
+},
+
     getLoginStatusColor(dateString, isOnline) {
       if (isOnline) return "bg-green-200 text-green-800";
 
@@ -161,30 +241,95 @@ export default {
       if (diffDays <= 7) return "bg-red-200 text-red-800";
       return "bg-gray-200 text-gray-800";
     },
-    addStaff() {
-      if (!this.newStaff.name || !this.newStaff.role || !this.newStaff.email) {
-        alert("Semua field harus diisi.");
-        return;
+
+
+    async addStaff() {
+  if (!this.newStaff.name || !this.newStaff.role || !this.newStaff.email) {
+    alert("Semua field harus diisi.");
+    return;
+  }
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('No token found, please login first.');
+    this.$router.push('/');
+    return;
+  }
+
+  try {
+    const response = await axios.post('https://nurulfrozen.dgeo.id/api/users', {
+      name: this.newStaff.name,
+      role: this.newStaff.role,
+      email: this.newStaff.email,
+      phone: this.newStaff.phone || '', // optional field
+      password: '123456', // You can change this if needed
+
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       }
+    });
 
-      const newId = `CO-00${this.staffList.length + 1}`;
-      this.staffList.push({
-        id: newId,
-        name: this.newStaff.name,
-        role: this.newStaff.role,
-        email: this.newStaff.email,
-        lastActive: new Date().toISOString().split("T")[0],
-        isOnline: false,
-      });
+    console.log('Staff created:', response.data);
 
-      // Reset
-      this.newStaff = { name: "", role: "", email: "" };
-      this.showAddModal = false;
-    },
+    // After successful POST, fetch latest data from API
+    this.fetchStaff();
+
+    // Reset form and close modal
+    this.newStaff = { name: "", role: "", email: "" };
+    this.showAddModal = false;
+
+  } catch (error) {
+    console.error('Failed to create staff:', error);
+    alert('Gagal menambahkan staff.');
+  }
+},
+
+async updateStaff() {
+  if (!this.newStaff.name || !this.newStaff.role || !this.newStaff.email) {
+    alert("Semua field harus diisi.");
+    return;
+  }
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('No token found, please login first.');
+    this.$router.push('/');
+    return;
+  }
+
+  try {
+    const response = await axios.put(`https://nurulfrozen.dgeo.id/api/users/${this.editStaffId}`, {
+      name: this.newStaff.name,
+      role: this.newStaff.role,
+      email: this.newStaff.email,
+      phone: this.newStaff.phone || '',
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+
+    console.log('Staff updated:', response.data);
+
+    // After successful PUT, fetch latest data
+    this.fetchStaff();
+
+    // Reset form and close modal
+    this.newStaff = { name: "", role: "", email: "" };
+    this.showAddModal = false;
+    this.isEditMode = false;
+    this.editStaffId = null;
+
+    alert('Staff berhasil diperbarui.');
+
+  } catch (error) {
+    console.error('Failed to update staff:', error);
+    alert('Gagal memperbarui staff.');
+  }
+},
+
+
   },
 };
 </script>
-
-<style scoped>
-@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css");
-</style>
