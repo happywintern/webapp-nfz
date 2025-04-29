@@ -58,16 +58,56 @@
                   <button @click="viewProduct(product.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-folder-open"></i>
                   </button>
-                  <button @click="deleteProduct(product.id)" class="text-gray-600 hover:text-blue-600">
+                  <button @click="openDeleteModal(product.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-trash"></i>
                   </button>
-                </td>
+
+
+                                  </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- Delete Confirmation Modal -->
+<div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg p-6 w-80">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Konfirmasi Hapus</h2>
+    <p class="text-gray-600 mb-6">Apakah kamu yakin ingin menghapus item ini?</p>
+    <div class="flex justify-end gap-2">
+      <button @click="closeDeleteModal" class="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded">
+        Batal
+      </button>
+      <button @click="confirmDelete" class="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded">
+        Hapus
+      </button>
+    </div>
+  </div>
+</div>
+
       </div>
-      
+      <!-- Add Product Modal -->
+<div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg w-[400px]">
+    <h2 class="text-xl font-bold text-[#1A327B] mb-4">Tambah Produk</h2>
+    
+    <div class="space-y-3">
+      <input v-model="newProduct.name" type="text" placeholder="Nama Produk" class="w-full border rounded px-3 py-2" />
+      <input v-model="newProduct.category" type="text" placeholder="Kategori" class="w-full border rounded px-3 py-2" />
+      <input v-model="newProduct.stock" type="number" placeholder="Stok" class="w-full border rounded px-3 py-2" />
+      <input v-model="newProduct.buyPrice" type="number" placeholder="Harga Beli" class="w-full border rounded px-3 py-2" />
+      <input v-model="newProduct.sellPrice" type="number" placeholder="Harga Jual" class="w-full border rounded px-3 py-2" />
+      <input type="file" @change="handleImageUpload" class="w-full" />
+    </div>
+
+    <div class="flex justify-end mt-4 space-x-2">
+      <button @click="showAddModal = false" class="px-4 py-2 bg-gray-300 text-black rounded">Batal</button>
+      <button @click="addProduct" class="px-4 py-2 bg-[#1A327B] text-white rounded">Simpan</button>
+    </div>
+  </div>
+</div>
+
+
   
   </AppLayout>
 
@@ -138,11 +178,7 @@
       router.push({ name: 'ViewProduct', params: { id: id.toString() } });
     };
   
-      const deleteProduct = (id) => {
-        if (confirm(`Are you sure you want to delete product ${id}?`)) {
-          products.value = products.value.filter(product => product.id !== id);
-        }
-      };
+      
 
       const showAddModal = ref(false);
 
@@ -176,6 +212,26 @@
       };
     };
 
+    const showDeleteModal = ref(false)
+const selectedProductId = ref(null)
+
+function openDeleteModal(id) {
+  selectedProductId.value = id
+  showDeleteModal.value = true
+}
+
+function closeDeleteModal() {
+  showDeleteModal.value = false
+  selectedProductId.value = null
+}
+
+function confirmDelete() {
+  // Your delete logic here
+  console.log("Deleting product with ID:", selectedProductId.value)
+  // Example: await axios.delete(`/api/products/${selectedProductId.value}`)
+  closeDeleteModal()
+}
+
   
 
       return {
@@ -189,13 +245,16 @@
         products,
         filteredProducts,
         viewProduct,
-        deleteProduct,
         toggleSidebar,
         setActiveMenu,
         showAddModal,
         newProduct,
         handleImageUpload,
         addProduct,
+        openDeleteModal,
+        confirmDelete,
+        showDeleteModal: false,
+      selectedProductId: null
       };
     }
   };

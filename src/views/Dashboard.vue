@@ -42,18 +42,21 @@
               </div>
             </div>
 
-            <!-- Laba -->
+            <!-- Profit -->
             <div class="bg-green-100 p-4 rounded-xl shadow flex items-start space-x-4 max-w-[360px] w-full">
               <div class="bg-green-500 text-white p-2 rounded-full">
-                <ShoppingBagIcon class="w-6 h-6" />
+                <ArrowTrendingUpIcon class="w-6 h-6" />
               </div>
               <div>
-                <p class="text-xl font-bold text-green-800">Rp500.0000</p>
+                <p class="text-xl font-bold text-green-800">Rp.350.000</p>
                 <p class="text-sm text-green-800">Laba</p>
               </div>
             </div>
-          </div>
-        </div>
+
+            
+
+           </div>
+           </div>
 
         <!-- KANAN: Chart -->
         <div class="bg-white rounded-2xl shadow px-6 pt-7 pb-6">
@@ -62,6 +65,46 @@
           </h2>
           <canvas id="salesChart" class="w-full h-64"></canvas>
         </div>
+
+        <div class="mt-8 bg-white shadow rounded-lg p-6">
+  <h2 class="text-xl font-bold text-blue-900 mb-4 flex text-center gap-2 border-b pb-2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    Transaksi Dalam Proses
+  </h2>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50 text-gray-700 font-semibold">
+        <tr>
+          <th class="px-4 py-2 text-left">ID Transaksi</th>
+          <th class="px-4 py-2 text-left">Tanggal</th>
+          <th class="px-4 py-2 text-left">Total</th>
+          <th class="px-4 py-2 text-left">Status</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-100">
+        <!-- Example Row -->
+        <tr>
+          <td class="px-4 py-2 font-medium text-blue-600">CO-002</td>
+          <td class="px-4 py-2">22 Apr 2025</td>
+          <td class="px-4 py-2">Rp50.000</td>
+          <td class="px-4 py-2">
+            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v4m0 8v4m8-8h-4m-8 0H4" />
+              </svg>
+              On Progress
+            </span>
+          </td>
+        </tr>
+        <!-- You can dynamically render more rows here -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
       </div>
 
       <!-- Bawah : Pesanan On Progress -->
@@ -112,6 +155,7 @@ import {
   ChartBarIcon,
   ArrowUturnLeftIcon,
   ShoppingBagIcon,
+    ArrowTrendingUpIcon
 } from "@heroicons/vue/24/solid";
 
 export default {
@@ -121,6 +165,8 @@ export default {
     ChartBarIcon,
     ArrowUturnLeftIcon,
     ShoppingBagIcon,
+    ArrowTrendingUpIcon,
+    
   },
   setup() {
     const orders = ref([
