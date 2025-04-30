@@ -156,19 +156,22 @@
   <script>
 
   import AppLayout from "@/components/Layout.vue";
+  // import { ref } from 'vue';
+// import { useRoute } from 'vue-router';
+// import axios from 'axios';
+
+// const route = useRoute();
+// const productId = route.params.id;
+// const product = ref(null);
+
+
 
   export default {
     name: "EditPage",
     components: {
       AppLayout
     },
-    props: {
-
-      id: {
-        type: String,
-        required: true
-      }
-    },
+    
     data() {
       return {
     showEditModal: false,

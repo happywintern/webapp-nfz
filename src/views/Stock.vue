@@ -52,8 +52,8 @@
                 </td>
                 <td class="py-2 px-4">{{ product.category }}</td>
                 <td class="py-2 px-4">{{ product.stock }}</td>
-                <td class="py-2 px-4">Rp{{ product.buyPrice.toLocaleString() }}</td>
-                <td class="py-2 px-4">Rp{{ product.sellPrice.toLocaleString() }}</td>
+                <td class="py-2 px-4">Rp{{ product.buyPrice }}</td>
+                <td class="py-2 px-4">Rp{{ product.sellPrice }}</td>
                 <td class="py-2 px-6 flex space-x-2 justify-center py-2">
                   <button @click="viewProduct(product.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-folder-open"></i>
@@ -63,7 +63,7 @@
                   </button>
 
 
-                                  </td>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -129,11 +129,13 @@
   </template>
   
   <script>
-  import { ref, computed } from "vue";
+  import { ref, computed, onMounted } from "vue";
   import logoImage from "@/assets/image.png";
   import { HomeIcon, ShoppingCartIcon, BanknotesIcon, CubeIcon, StarIcon } from "@heroicons/vue/24/solid";
   import AppLayout from "@/components/Layout.vue";
   import { useRouter } from "vue-router";
+  import axios from 'axios';
+
 
 
   export default {
@@ -182,16 +184,28 @@
       });
   
       const filteredProducts = computed(() => {
-        return products.value.filter(product => {
-          const matchesCategory = selectedCategory.value === "all" || product.category === selectedCategory.value;
-          const matchesSearch = product.name.toLowerCase().includes(searchQuery.value.toLowerCase());
-          return matchesCategory && matchesSearch;
-        });
+      return (products.value || []).filter(product => {
+        const name = product.name ?? '';
+        const category = product.category ?? '';
+        const search = searchQuery.value ?? '';
+        const selected = selectedCategory.value ?? 'all';
+
+        const matchesCategory = selected === "all" || category === selected;
+        const matchesSearch = name.toLowerCase().includes(search.toLowerCase());
+
+        return matchesCategory && matchesSearch;
       });
+    });
+
   
-      const viewProduct = (id) => {
-      router.push({ name: 'ViewProduct', params: { id: id.toString() } });
-    };
+    const viewProduct = (id) => {
+  if (!id) {
+    console.error("Product ID is undefined!");
+    return;
+  }
+  router.push({ name: 'ViewProduct', params: { id: id.toString() } });
+};
+
   
       
 
@@ -229,6 +243,67 @@
 
     const showDeleteModal = ref(false)
 const selectedProductId = ref(null)
+
+onMounted(() => {
+  fetchProducts();
+});
+
+
+const token = localStorage.getItem('token');
+    console.log('Token from localStorage:', token);
+
+    if (!token) {
+      alert('No token found, please login first.');
+      this.$router.push('/'); 
+      return;
+    }
+    const fetchProducts = async () => {
+  try {
+    const response = await axios.get("https://nurulfrozen.dgeo.id/api/products", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    console.log("Full API response:", response);
+
+    if (response.data && Array.isArray(response.data.data)) {
+      const rawProducts = response.data.data;
+
+      const transformed = rawProducts.map(product => {
+        const fullImageUrl = product.image ? `https://nurulfrozen.dgeo.id${product.image}` : null;
+
+        // Log and validate the image URL
+        if (fullImageUrl) {
+          const img = new Image();
+          img.src = fullImageUrl;
+          img.onload = () => console.log(`✅ Image loaded: ${fullImageUrl}`);
+          img.onerror = () => console.warn(`❌ Failed to load image: ${fullImageUrl}`);
+        } else {
+          console.warn(`⚠️ No image provided for product ID ${product.id}`);
+        }
+
+        return {
+          id: product.product_id,
+          name: product.product_name,
+          image: fullImageUrl,
+          category: product.description,
+          stock: product.available_stock,
+          buyPrice: product.inventory_entries?.[0]?.purchase_price ?? 0,
+          sellPrice: null,
+        };
+      });
+
+      products.value = transformed;
+    } else {
+      console.warn("Unexpected response structure:", response.data);
+      products.value = [];
+    }
+  } catch (error) {
+    console.error("Failed to fetch products:", error);
+    products.value = [];
+  }
+};
 
 function openDeleteModal(id) {
   selectedProductId.value = id
