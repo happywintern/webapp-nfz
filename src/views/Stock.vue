@@ -103,25 +103,58 @@
         </div>
       </div>
     </div>
-<div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-  <div class="bg-white p-6 rounded-lg w-[400px]">
-    <h2 class="text-xl font-bold text-[#1A327B] mb-4">Tambah Produk</h2>
+
     
-    <div class="space-y-3">
-      <input v-model="newProduct.name" type="text" placeholder="Nama Produk" class="w-full border rounded px-3 py-2" />
-      <input v-model="newProduct.category" type="text" placeholder="Kategori" class="w-full border rounded px-3 py-2" />
-      <input v-model="newProduct.stock" type="number" placeholder="Stok" class="w-full border rounded px-3 py-2" />
-      <input v-model="newProduct.buyPrice" type="number" placeholder="Harga Beli" class="w-full border rounded px-3 py-2" />
-      <input v-model="newProduct.sellPrice" type="number" placeholder="Harga Jual" class="w-full border rounded px-3 py-2" />
-      <input type="file" @change="handleImageUpload" class="w-full" />
+    <!-- Modal Tambah Product -->
+    <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 class="text-lg font-semibold mb-4 text-[#1A327B]">Tambah Produk</h2>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold">Nama</label>
+            <input type="text" v-model="newProduct.name" class="w-full px-4 py-2 border rounded" />
+          </div>
+
+          <div>
+          <label class="block text-sm font-semibold">Kategori</label>
+          <select v-model="newProduct.category" class="w-full px-4 py-2 border rounded">
+            <option disabled value="">Pilih Kategori</option>
+            <option value="daging">Daging</option>
+            <option value="sayur">Sayur</option>
+            <option value="minuman">Minuman</option>
+          </select>
+        </div>
+
+          <div>
+            <label class="block text-sm font-semibold">Harga</label>
+            <input type="text" v-model="newProduct.sellPrice" class="w-full px-4 py-2 border rounded" />
+          </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold mt-7">Gambar</label>
+            <input type="file" @change="handleImageUpload" class="w-full py-2" />
+          </div>
+        <div class="mt-6 flex justify-end space-x-2">
+          <button @click="showAddModal = false" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+          <button @click="addProduct" class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800">Tambah</button>
+        </div>
+      </div>
     </div>
 
-    <div class="flex justify-end mt-4 space-x-2">
-      <button @click="showAddModal = false" class="px-4 py-2 bg-gray-300 text-black rounded">Batal</button>
-      <button @click="addProduct" class="px-4 py-2 bg-[#1A327B] text-white rounded">Simpan</button>
+    <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded shadow-lg w-full max-w-md">
+    <h2 class="text-lg font-semibold text-red-600">Konfirmasi Hapus</h2>
+    <p class="mt-2">Apakah kamu yakin ingin menghapus produk ini?</p>
+    <div class="mt-4 flex justify-end space-x-2">
+      <button @click="closeDeleteModal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+      <button @click="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Hapus</button>
     </div>
   </div>
 </div>
+
+
 
   
   </AppLayout>
@@ -220,29 +253,63 @@
         image: null
       });
 
-      const handleImageUpload = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        newProduct.value.image = URL.createObjectURL(file);
-      }
-    };
+      const handleImageUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    newProduct.value.image = file; // This must be a File object
+  }
+};
 
-    const addProduct = () => {
-      const id = products.value.length + 1;
-      products.value.push({ id, ...newProduct.value });
-      showAddModal.value = false;
-      newProduct.value = {
-        name: '',
-        category: '',
-        stock: 0,
-        buyPrice: 0,
-        sellPrice: 0,
-        image: null
-      };
-    };
 
-    const showDeleteModal = ref(false)
-const selectedProductId = ref(null)
+const addProduct = async () => {
+  try {
+    const token = localStorage.getItem('token'); // Bearer token for authentication
+    const formData = new FormData();
+
+    // Append required fields
+    formData.append('product_name', newProduct.value.name);
+    formData.append('description', newProduct.value.category);
+    formData.append('price', parseFloat(newProduct.value.sellPrice));
+    formData.append('status', 'active'); // Always active by default
+
+    // Append image if provided
+    if (newProduct.value.image) {
+      formData.append('image', newProduct.value.image); // Must be a File object
+    }
+
+    const response = await axios.post('https://nurulfrozen.dgeo.id/api/products', formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    console.log('✅ Product successfully added:', response.data);
+
+    // Update product list or UI state
+    products.value.push({
+      ...newProduct.value,
+      id: response.data.data.product_id,
+      image: response.data.data.image,
+    });
+
+    // Reset form
+    showAddModal.value = false;
+    newProduct.value = {
+      name: '',
+      category: '',
+      stock: 0,
+      buyPrice: 0,
+      sellPrice: 0,
+      image: null,
+    };
+  } catch (error) {
+    console.error('❌ Error adding product:', error.response?.data || error.message);
+  }
+};
+
+
 
 onMounted(() => {
   fetchProducts();
@@ -290,7 +357,7 @@ const token = localStorage.getItem('token');
           category: product.description,
           stock: product.available_stock,
           buyPrice: product.inventory_entries?.[0]?.purchase_price ?? 0,
-          sellPrice: null,
+          sellPrice: product.price,
         };
       });
 
@@ -305,7 +372,13 @@ const token = localStorage.getItem('token');
   }
 };
 
+const showDeleteModal = ref(false)
+const selectedProductId = ref(null)
+
+
 function openDeleteModal(id) {
+  console.log("🧪 openDeleteModal called with ID:", id)
+
   selectedProductId.value = id
   showDeleteModal.value = true
 }
@@ -315,11 +388,27 @@ function closeDeleteModal() {
   selectedProductId.value = null
 }
 
-function confirmDelete() {
-  // Your delete logic here
-  console.log("Deleting product with ID:", selectedProductId.value)
-  // Example: await axios.delete(`/api/products/${selectedProductId.value}`)
-  closeDeleteModal()
+async function confirmDelete() {
+  const token = localStorage.getItem('token');
+
+  try {
+    console.log("🗑️ Deleting product with ID:", selectedProductId.value);
+
+    const response = await axios.delete(`https://nurulfrozen.dgeo.id/api/products/${selectedProductId.value}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      }
+    });
+
+    console.log("✅ Product deleted successfully:", response.data);
+    // Optionally refresh the product list here
+  } catch (error) {
+    console.error("❌ Failed to delete product:", error.response?.data || error);
+  }
+
+  closeDeleteModal();
 }
 
   
@@ -343,7 +432,8 @@ function confirmDelete() {
         addProduct,
         openDeleteModal,
         confirmDelete,
-        showDeleteModal: false,
+        showDeleteModal,
+        closeDeleteModal,
       selectedProductId: null
       };
     }

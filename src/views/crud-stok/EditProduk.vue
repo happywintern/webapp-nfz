@@ -29,6 +29,29 @@
         <!-- Right Container: Stock Table -->
         <div class="w-3/5 bg-white p-6 rounded-2xl shadow-md">
           <h2 class="text-xl text-center font-semibold mb-4">Stok Produk</h2>
+
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+
+          <!-- Search Input -->
+        <div class="relative w-full sm:w-64">
+          <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+          <input
+            type="text"
+            placeholder="Search"
+            class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-full"
+          />
+        </div>
+
+        <!-- Tambah Button -->
+        <button
+          @click="showAddStock = true"
+          class="flex items-center gap-2 px-4 py-2 bg-[#1A327B] text-white rounded-lg hover:bg-blue-800 h-[42px]"
+        >
+        <i class="fa fa-calendar-plus-o" aria-hidden="true"></i>
+        Tambah
+        </button>
+      </div>
+
           <table class="w-full text-sm">
           <thead class="text-left">
             <tr class="text-gray-700">
@@ -48,10 +71,10 @@
                 <td class="py-2 px-6">{{ item.stok }}</td>
                 <td class="py-2 px-6">{{ item.tanggalKadaluarsa }}</td>
                 <td class="py-2 px-6 flex space-x-2 justify-center">
-                  <button @click="editStock(item)" class="text-gray-600 hover:text-blue-600">
+                  <button @click="editStock(item.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-pen"></i>
                   </button>
-                  <button @click="deleteStock(item)" class="text-gray-600 hover:text-blue-600">
+                  <button @click="deleteStock(item.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-trash"></i>
                   </button>
                 </td>
@@ -150,93 +173,260 @@
   </div>
 </div> -->
 
+<!-- Modal Tambah Stok -->
+<div v-if="showAddStock" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+    <h2 class="text-lg font-semibold mb-4 text-[#1A327B]">Tambah Stok</h2>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold">Tanggal Masuk</label>
+        <input type="date" v-model="newStock.entryDate" class="w-full px-4 py-2 border rounded" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold">Tanggal Kadaluarsa</label>
+        <input type="date" v-model="newStock.expiredDate" class="w-full px-4 py-2 border rounded" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold">Stok</label>
+        <input type="number" v-model="newStock.quantity" class="w-full px-4 py-2 border rounded" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold">Harga Beli</label>
+        <input type="number" v-model.number="newStock.purchase_price" class="w-full px-4 py-2 border rounded" />
+      </div>
+    </div>
+
+    <div class="mt-6 flex justify-end space-x-2">
+      <button @click="showAddStock = false" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+      <button @click="addStock" class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800">Tambah</button>
+    </div>
+  </div>
+</div>
+
+
   </AppLayout>
 </template>
+<script>
+import AppLayout from "@/components/Layout.vue";
+import axios from 'axios';
 
-  <script>
+export default {
+  name: "EditPage",
+  components: {
+    AppLayout
+  },
 
-  import AppLayout from "@/components/Layout.vue";
-  // import { ref } from 'vue';
-// import { useRoute } from 'vue-router';
-// import axios from 'axios';
+  data() {
+    return {
+      showEditModal: false,
+      showAddStock: false,
+      product: {
+        name: '',
+        category: '',
+        buyPrice: '',
+        sellPrice: '',
+        image: ''
+      },
+      editedProduct: {
+  name: '',
+  category: '',
+  buyPrice: '',
+  sellPrice: '',
+  image: '',
+  imageFile: null // <-- for uploaded image
+},
+      newStock: {
+        entryDate: '',
+        expiredDate: '',
+        quantity: '',
+        purchase_price: ''
+      },
+      stockData: [],
+      products: [] // Added to prevent 'products is not defined' error
+    };
+  },
 
-// const route = useRoute();
-// const productId = route.params.id;
-// const product = ref(null);
+  created() {
+    this.fetchProductData();
+  },
 
+  methods: {
+    fetchProductData() {
+      const productId = this.$route.params.id;
+      const token = localStorage.getItem('token');
 
+      console.log("🔍 Fetching product with ID:", productId);
 
-  export default {
-    name: "EditPage",
-    components: {
-      AppLayout
-    },
-    
-    data() {
-      return {
-    showEditModal: false,
-    product: {
-      name: '',
-      category: '',
-      buyPrice: '',
-      sellPrice: '',
-      image: ''
-    },
-    editedProduct: {
-      name: '',
-      category: '',
-      buyPrice: '',
-      sellPrice: '',
-      image: ''
-    },
-    stockData: []
-  };
+      axios.get(`https://nurulfrozen.dgeo.id/api/products/${productId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => {
+        console.log('✅ Product data fetched:', response.data);
 
-    },
-    created() {
-      // Fetch the product data when the component is created
-      this.fetchProductData();
-    },
-    methods: {
-      fetchProductData() {
-        // Here you would typically make an API call to get the product data
-        // For example:
-        // axios.get(`/api/products/${this.id}`)
-        //   .then(response => {
-        //     this.product = response.data.product;
-        //     this.stockData = response.data.stockData;
-        //   })
-        //   .catch(error => {
-        //     console.error('Error fetching product data:', error);
-        //   });
-        
-        // For now, we'll just simulate this with mock data
+        const data = response.data.data;
+        const fullImageUrl = data.image ? `https://nurulfrozen.dgeo.id${data.image}` : null;
+
+        if (fullImageUrl) {
+          const img = new Image();
+          img.src = fullImageUrl;
+          img.onload = () => console.log(`✅ Image loaded: ${fullImageUrl}`);
+          img.onerror = () => console.warn(`❌ Failed to load image: ${fullImageUrl}`);
+        }
+
         this.product = {
-          name: 'Sample Product',
-          category: 'Daging',
-          buyPrice: 'Rp 50.000',
-          sellPrice: 'Rp 75.000',
-          image: 'https://via.placeholder.com/400'
+          name: data.product_name,
+          category: data.description,
+          buyPrice: data.purchase_price || '-',
+          sellPrice: data.price,
+          image: fullImageUrl
         };
-        
-        this.stockData = [
-          { tanggalMasuk: '13-11-2023', stok: 20, tanggalKadaluarsa: '13-11-2023' },
-          { tanggalMasuk: '14-11-2023', stok: 15, tanggalKadaluarsa: '14-11-2023' }
-        ];
-      },
-      updateProduct() {
-        // Show modal and copy product data to edit form
-    this.editedProduct = { ...this.product };
-    this.showEditModal = true;
-      },
-      editStock(item) {
-        // Handle editing stock item
-        console.log('Editing stock item:', item);
+
+        this.stockData = (data.inventory_entries || []).map(entry => ({
+          tanggalMasuk: new Date(entry.entry_date).toLocaleDateString(),
+          stok: entry.quantity,
+          tanggalKadaluarsa: new Date(entry.expired_date).toLocaleDateString(),
+          id: entry.inventory_entry_id // For deleting specific stock
+        }));
+      })
+      .catch(error => {
+        console.error('❌ Error fetching product data:', error);
+      });
+    },
+
+    updateProduct() {
+      this.editedProduct = { ...this.product };
+      this.showEditModal = true;
+    },
+
+    editStock(item) {
+      console.log('Editing stock item:', item);
+    },
+
+    addStock() {
+      const productId = this.$route.params.id;
+      const token = localStorage.getItem('token');
+
+      const payload = {
+        quantity: this.newStock.quantity,
+        entry_date: this.newStock.entryDate,
+        expired_date: this.newStock.expiredDate,
+        purchase_price: this.newStock.purchase_price
+      };
+
+      console.log("📦 Submitting new stock:", payload);
+
+      axios.post(`https://nurulfrozen.dgeo.id/api/inventory-entries/product/${productId}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        }
+      })
+      .then(response => {
+        console.log("✅ Stock added successfully:", response.data);
+        this.showAddStock = false;
+        this.fetchProductData(); // Refresh stock list
+
+        // Reset form
+        this.newStock = {
+          entryDate: '',
+          expiredDate: '',
+          quantity: '',
+          purchase_price: ''
+        };
+      })
+      .catch(error => {
+        console.error("❌ Failed to add stock:", error.response?.data || error);
+        alert("Gagal menambahkan stok. Pastikan semua data benar.");
+      });
+    },
+
+    async saveProductUpdate() {
+    const productId = this.$route.params.id;
+    const token = localStorage.getItem('token');
+
+    const formData = new FormData();
+    formData.append('product_name', this.editedProduct.name);
+    formData.append('description', this.editedProduct.category);
+    formData.append('price', this.editedProduct.sellPrice);
+    formData.append('status', 'active'); // assuming default status is active
+
+    if (this.editedProduct.imageFile) {
+      formData.append('image', this.editedProduct.imageFile);
+    }
+
+    try {
+      const response = await axios.post(
+        `https://nurulfrozen.dgeo.id/api/products/${productId}?_method=PUT`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+            Accept: 'application/json'
+          }
+        }
+      );
+
+      console.log("✅ Product updated:", response.data);
+      alert("Produk berhasil diperbarui!");
+      this.showEditModal = false;
+      this.fetchProductData(); // refresh display
+    } catch (error) {
+      console.error("❌ Gagal update produk:", error.response?.data || error);
+      alert("Gagal memperbarui produk. Periksa input dan coba lagi.");
+    }
+  },
+
+  handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+      this.editedProduct.imageFile = file;
+    }
+  },
+
+
+
+    async deleteStock(id) {
+      const token = localStorage.getItem('token');
+      if (!id) {
+        console.warn("❌ No ID provided for deleteStock.");
+        return;
+      }
+
+      try {
+        console.log("🗑️ Attempting to delete stock with ID:", id);
+
+        const response = await axios.delete(`https://nurulfrozen.dgeo.id/api/inventory-entries/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          }
+        });
+
+        console.log("✅ Stock item deleted:", response.data);
+
+        // Remove from local stockData array
+        this.stockData = this.stockData.filter(p => p.id !== id);
+
+      } catch (error) {
+        console.error("❌ Error deleting stock:", error.response?.data || error.message);
+        alert("Gagal menghapus stok.");
       }
     }
-  };
-  </script>
-  <style scoped>
+  }
+};
+</script>
+
+<style scoped>
   @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
   
   .container {
