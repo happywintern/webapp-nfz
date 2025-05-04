@@ -76,7 +76,12 @@ export default {
         console.log("Login success:", response.data);
 
         if (response.data && response.data.data?.access_token) {
-          localStorage.setItem("token", response.data.data?.access_token);
+          const token = response.data.data.access_token;
+          const user = response.data.data.user;
+
+  // Store token and user info
+  localStorage.setItem("token", token);
+  localStorage.setItem("user_id", user.user_id); // 👈 Save user_id
           this.$router.push("/dashboard");
         } else {
           alert("Login succeeded but no token received.");

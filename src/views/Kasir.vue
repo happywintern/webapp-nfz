@@ -29,7 +29,7 @@
             <div v-for="product in products" :key="product.id"
               class="bg-white p-4 rounded-xl shadow hover:shadow-lg border border-gray-100 cursor-pointer transition"
               @click="addToCart(product)">
-              <img :src="product.image" alt="Product Image" class="w-full h-28 object-contain" />
+              <img :src="product.image ? 'https://nurulfrozen.dgeo.id' + product.image : fallbackImage"  alt="Product Image" class="w-full h-28 object-contain" />
               <h3 class="mt-2 font-semibold text-sm text-center text-gray-800">{{ product.name }}</h3>
               <p class="text-gray-500 text-xs text-center">{{ product.weight }}</p>
               <p class="text-[#1A327B] font-bold text-center">Rp{{ product.price.toLocaleString() }}</p>
@@ -54,7 +54,7 @@
                 <div v-for="(item, index) in cart" :key="index"
                   class="flex items-center justify-between p-2 border rounded-lg border-[#1A327B] mb-3">
                   <div class="flex items-center">
-                    <img :src="item.image" alt="Product" class="w-12 h-12 object-cover rounded" />
+                    <img :src="item.image ? 'https://nurulfrozen.dgeo.id' + item.image : fallbackImage" alt="Product" class="w-12 h-12 object-cover rounded" />
                     <div class="ml-3">
                       <h4 class="font-semibold text-sm text-gray-800">{{ item.name }}</h4>
                       <p class="text-gray-500 text-sm">Rp. {{ item.price.toLocaleString() }}</p>
@@ -74,7 +74,7 @@
             <div class="border-t pt-4 mt-4">
               <button @click="isPaying = true"
                 class="bg-[#1A327B] text-white w-full py-3 rounded-2xl font-semibold shadow flex justify-between items-center px-4">
-                <span>Bayar</span>
+                <span>Check Out</span>
                 <span>Rp{{ totalPrice.toLocaleString() }}</span>
               </button>
             </div>
@@ -198,8 +198,10 @@
 
 <script>
 import AppLayout from "@/components/Layout.vue";
-import { ref, computed } from "vue";
+import { ref, computed, onMounted  } from "vue";
 import { useRouter } from "vue-router";
+import axios from "axios";
+
 
 export default {
   name: "KasirPage",
@@ -207,7 +209,7 @@ export default {
   setup() {
     const router = useRouter();
     const isPaying = ref(false);
-    const paymentMethod = ref("Cash");
+    const selectedPaymentMethod = ref(''); // Default value can be 'Cash', 'QR', etc.
     const deliveryMethod = ref("pickup");
     const selectedAddress = ref(null);
 
@@ -217,20 +219,34 @@ export default {
     const showQRDone = ref(false);
     const receivedCash = ref(0);
 
-    const products = ref([
-      { id: 1, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 2, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 3, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 4, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 5, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 6, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 7, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 8, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 9, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 10, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 11, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-      { id: 12, name: "Nuget Kanzler", weight: "450g", price: 20000, image:require('@/assets/Product.jpeg')},
-    ]);
+    const products = ref([]);
+
+    const fetchProducts = async () => {
+  try {
+    const response = await axios.get('https://nurulfrozen.dgeo.id/api/products', {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    console.log("Full API response:", response);
+
+
+    // Map the API response to match frontend usage
+    products.value = response.data.data.map((item) => ({
+      id: item.product_id,
+      name: item.product_name,
+      image: item.image,
+      price: parseFloat(item.price),
+    }));
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+onMounted(() => {
+  fetchProducts();
+});
 
     const cart = ref([]);
 
@@ -256,13 +272,48 @@ export default {
       }
     };
 
-    const confirmPayment = () => {
-      if (paymentMethod.value === "Cash") {
-        showCashPopup.value = true;
-      } else {
-        showQRPopup.value = true;
-      }
+    const confirmPayment = async () => {
+      console.log("Cart contents:", JSON.parse(JSON.stringify(cart.value)));
+
+  try {
+    const payload = {
+      staff_id: localStorage.getItem('user_id'),
+      pickup_method: deliveryMethod.value === 'pickup' ? 'langsung' : 'delivery',
+      payment_method: selectedPaymentMethod.value.toLowerCase(), // ensure lowercase for backend
+      payment_status: 'unpaid', // e.g., 'paid' or 'unpaid'
+      order_status: 'pending',
+      distribution: 'NFZ', // e.g., 'NFZ' or 'QR'
+      items: cart.value.map(item => ({
+    product_id: item.product_id || item.id,  // adjust depending on your cart object
+    quantity: item.quantity
+  }))
     };
+
+    const response = await axios.post('https://nurulfrozen.dgeo.id/api/sales-orders', payload, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('Order created:', response.data);
+
+    // Clear cart
+    cart.value = [];
+
+    // Show popup based on payment method
+    if (selectedPaymentMethod.value === "Cash") {
+      showCashPopup.value = true;
+    } else {
+      showQRPopup.value = true;
+    }
+
+  } catch (err) {
+    console.error('Failed to create order:', err.response?.data || err);
+    alert("Gagal menyimpan pesanan. Pastikan semua field sudah diisi dengan benar.");
+  }
+};
+
 
     const finishCashPayment = () => {
       showCashPopup.value = false;
@@ -286,7 +337,7 @@ export default {
 
     return {
       isPaying,
-      paymentMethod,
+      selectedPaymentMethod,
       deliveryMethod,
       selectedAddress,
       showCashPopup,
