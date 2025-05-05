@@ -35,6 +35,9 @@
               <p class="text-[#1A327B] font-bold text-center">Rp{{ product.price.toLocaleString() }}</p>
             </div>
           </div>
+
+
+          
         </div>
 
         <!-- RIGHT: Cart / Payment Summary -->
@@ -57,7 +60,8 @@
                     <img :src="item.image ? 'https://nurulfrozen.dgeo.id' + item.image : fallbackImage" alt="Product" class="w-12 h-12 object-cover rounded" />
                     <div class="ml-3">
                       <h4 class="font-semibold text-sm text-gray-800">{{ item.name }}</h4>
-                      <p class="text-gray-500 text-sm">Rp. {{ item.price.toLocaleString() }}</p>
+                      <p class="text-gray-500 text-sm">Rp. {{ item.price?.toLocaleString() ?? '0' }}</p>
+
                     </div>
                   </div>
                   <div class="flex items-center">
@@ -75,7 +79,7 @@
               <button @click="isPaying = true"
                 class="bg-[#1A327B] text-white w-full py-3 rounded-2xl font-semibold shadow flex justify-between items-center px-4">
                 <span>Check Out</span>
-                <span>Rp{{ totalPrice.toLocaleString() }}</span>
+                <span>Rp{{ totalPrice?.toLocaleString() ?? '0' }}</span>
               </button>
             </div>
           </template>
@@ -127,7 +131,7 @@
 
               <div class="flex justify-between font-semibold border-t pt-2">
                 <span>Total</span>
-                <span>Rp{{ totalPrice.toLocaleString() }}</span>
+                <span>Rp{{ totalPrice?.toLocaleString() ?? '0' }}</span>
               </div>
             </div>
 
@@ -147,7 +151,7 @@
           <input v-model.number="receivedCash" type="number"
             class="w-full border px-3 py-2 rounded-lg mb-4 focus:ring-[#1A327B]" />
           <p v-if="receivedCash >= totalPrice" class="text-sm text-green-600 font-semibold">
-            Kembalian: Rp{{ (receivedCash - totalPrice).toLocaleString() }}
+            Kembalian: Rp{{ (receivedCash - totalPrice)?.toLocaleString() ?? '0' }}
           </p>
           <p v-else class="text-sm text-red-500">Uang tidak cukup</p>
           <button @click="finishCashPayment" :disabled="receivedCash < totalPrice"
@@ -212,6 +216,8 @@ export default {
     const selectedPaymentMethod = ref(''); // Default value can be 'Cash', 'QR', etc.
     const deliveryMethod = ref("pickup");
     const selectedAddress = ref(null);
+    const selectedPaymentStatus = ref("unpaid"); // Usually "unpaid" until paid
+    const selectedDistribution = ref("NFZ"); // Default or based on selection
 
     const showCashPopup = ref(false);
     const showCashDone = ref(false);
@@ -251,20 +257,52 @@ onMounted(() => {
     const cart = ref([]);
 
     const addToCart = (product) => {
-      const item = cart.value.find((i) => i.id === product.id);
-      if (item) item.qty++;
-      else cart.value.push({ ...product, qty: 1 });
-    };
+  const existing = cart.value.find(item => item.id === product.id);
 
-    const increaseQty = (index) => cart.value[index].qty++;
-    const decreaseQty = (index) => {
-      if (cart.value[index].qty > 1) cart.value[index].qty--;
-      else cart.value.splice(index, 1);
-    };
+  if (existing) {
+    existing.qty++;
+  } else {
+    cart.value.push({
+      ...product,
 
-    const totalPrice = computed(() =>
-      cart.value.reduce((sum, item) => sum + item.price * item.qty, 0)
-    );
+      product_id: product.id, // make sure this exists
+      qty: 1,
+      price: parseFloat(product.price) || 0,
+      name: product.name,
+      image: product.image
+
+    });
+  }
+
+  console.log("Cart after add:", JSON.parse(JSON.stringify(cart.value)));
+};
+const increaseQty = (index) => {
+  console.log('Increasing qty for index', index, cart.value[index]);
+  if (cart.value[index]) {
+    cart.value[index].qty++;
+    console.log('New qty:', cart.value[index].qty);
+  }
+};
+
+
+const decreaseQty = (index) => {
+  if (cart.value[index] && cart.value[index].qty > 1) {
+    cart.value[index].qty--;
+  } else {
+    // Optional: remove item if qty reaches 0
+    cart.value.splice(index, 1);
+  }
+};
+
+const totalPrice = computed(() => {
+  return cart.value.reduce((sum, item) => {
+    const qty = parseInt(item.qty) || 0;
+    const price = parseFloat(item.price) || 0;
+    return sum + (qty * price);
+  }, 0);
+});
+
+
 
     const handleDeliveryChange = () => {
       if (deliveryMethod.value === "delivery" && !selectedAddress.value) {
@@ -280,9 +318,9 @@ onMounted(() => {
       staff_id: localStorage.getItem('user_id'),
       pickup_method: deliveryMethod.value === 'pickup' ? 'langsung' : 'delivery',
       payment_method: selectedPaymentMethod.value.toLowerCase(), // ensure lowercase for backend
-      payment_status: 'unpaid', // e.g., 'paid' or 'unpaid'
+      payment_status: selectedPaymentStatus(), // e.g., 'paid' or 'unpaid'
       order_status: 'pending',
-      distribution: 'NFZ', // e.g., 'NFZ' or 'QR'
+      distribution: selectedDistribution(), // e.g., 'NFZ' or 'QR'
       items: cart.value.map(item => ({
     product_id: item.product_id || item.id,  // adjust depending on your cart object
     quantity: item.quantity
