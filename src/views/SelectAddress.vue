@@ -1,15 +1,8 @@
 <template>
+    <AppLayout>
+
     <div class="min-h-screen bg-gray-100 flex">
-      <!-- Sidebar -->
-      <div 
-        :class="{'translate-x-0': isSidebarOpen, '-translate-x-full': !isSidebarOpen}"
-        class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 border-r"
-      >
-        <div class="p-6 flex items-center border-b">
-          <img :src="logo" alt="Logo" class="h-8 mr-2">
-          <span class="text-xl font-bold text-blue-700">NFZ</span>
-        </div>
-      </div>
+      
   
       <!-- Main Content -->
       <div class="flex-1 flex p-6">
@@ -59,6 +52,7 @@
         </div>
       </div>
     </div>
+    </AppLayout>
   </template>
   
   <script>

@@ -109,10 +109,10 @@
               <!-- Metode Pembayaran -->
               <div>
                 <label class="block text-gray-700 text-sm mb-1">Metode Pembayaran</label>
-                <select v-model="paymentMethod"
+                <select v-model="selectedPaymentMethod"
                   class="w-full border px-3 py-2 rounded-lg font-semibold focus:ring-[#1A327B]">
-                  <option value="Cash">Cash</option>
-                  <option value="QRIS">QRIS</option>
+                  <option value="cash">Cash</option>
+                  <option value="transfer">QRIS</option>
                 </select>
               </div>
 
@@ -311,21 +311,28 @@ const totalPrice = computed(() => {
     };
 
     const confirmPayment = async () => {
+      console.log("Cart length at confirmPayment:", cart.value.length);
+      console.log("Full cart:", JSON.stringify(cart.value, null, 2));
+
       console.log("Cart contents:", JSON.parse(JSON.stringify(cart.value)));
 
   try {
     const payload = {
       staff_id: localStorage.getItem('user_id'),
       pickup_method: deliveryMethod.value === 'pickup' ? 'langsung' : 'delivery',
-      payment_method: selectedPaymentMethod.value.toLowerCase(), // ensure lowercase for backend
-      payment_status: selectedPaymentStatus(), // e.g., 'paid' or 'unpaid'
+      payment_method: selectedPaymentMethod.value?.toLowerCase(), // ensure lowercase for backend
+      payment_status: selectedPaymentStatus.value, // e.g., 'paid' or 'unpaid'
       order_status: 'pending',
-      distribution: selectedDistribution(), // e.g., 'NFZ' or 'QR'
+      distribution: selectedDistribution.value, // e.g., 'NFZ' or 'QR'
       items: cart.value.map(item => ({
     product_id: item.product_id || item.id,  // adjust depending on your cart object
-    quantity: item.quantity
+    quantity: item.qty // ✅ Use `qty` instead of `quantity`
+
   }))
     };
+    console.log("Selected payment method:", selectedPaymentMethod.value);
+
+    console.log("Payload items being sent:", JSON.stringify(payload.items, null, 2));
 
     const response = await axios.post('https://nurulfrozen.dgeo.id/api/sales-orders', payload, {
       headers: {
@@ -340,7 +347,7 @@ const totalPrice = computed(() => {
     cart.value = [];
 
     // Show popup based on payment method
-    if (selectedPaymentMethod.value === "Cash") {
+    if (selectedPaymentMethod.value === "cash") {
       showCashPopup.value = true;
     } else {
       showQRPopup.value = true;
