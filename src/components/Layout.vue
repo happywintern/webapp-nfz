@@ -2,43 +2,45 @@
   <div class="min-h-screen bg-gray-100 flex">
     <!-- Sidebar -->
     <div
-      class="bg-white w-64 min-h-screen shadow-lg border-r transition-all duration-300 ease-in-out flex flex-col justify-between"
-      :class="{ 'w-20': !isSidebarOpen }"
+      class="bg-white min-h-screen shadow-lg border-r transition-all duration-300 ease-in-out flex flex-col justify-between"
+      :class="isSidebarOpen ? 'w-64' : 'w-20'"
     >
       <ul class="mt-4 space-y-1">
         <li v-for="item in menuItems" :key="item.name">
-          
-          <!-- Jika ini item logout, render button khusus -->
+          <!-- Logout button -->
           <button
             v-if="item.logout"
             @click="logout"
-            class="flex items-center space-x-3 py-3 pl-6 pr-4 mx-3 rounded-xl transition-colors duration-200
-                   text-[#6E6A7C] hover:bg-red-100 hover:text-red-600 w-5/6 text-left"
+            class="flex items-center space-x-3 py-3 px-4 mx-2 rounded-xl transition-colors duration-200
+                   text-[#6E6A7C] hover:bg-red-100 hover:text-red-600 w-full text-left"
           >
             <component :is="item.icon" class="w-5 h-5" />
-            <span v-if="isSidebarOpen">{{ item.label }}</span>
+            <transition name="fade">
+              <span v-if="isSidebarOpen">{{ item.label }}</span>
+            </transition>
           </button>
 
-          <!-- Selain itu, render router-link biasa -->
+          <!-- Link items -->
           <router-link
             v-else
             :to="item.link"
-            class="block transition-colors duration-200 mx-3 rounded-xl"
+            class="block transition-colors duration-200 mx-2 rounded-xl"
             :class="{
               'bg-[#112D7C] text-white': activeMenu === item.name,
               'hover:bg-gray-100 text-[#6E6A7C]': activeMenu !== item.name
             }"
           >
-            <div class="flex items-center space-x-3 py-3 pl-6 pr-4">
+            <div class="flex items-center space-x-3 py-3 px-4">
               <component
                 :is="item.icon"
                 class="w-5 h-5"
                 :class="activeMenu === item.name ? 'text-white' : 'text-[#6E6A7C]'"
               />
-              <span v-if="isSidebarOpen">{{ item.label }}</span>
+              <transition name="fade">
+                <span v-if="isSidebarOpen">{{ item.label }}</span>
+              </transition>
             </div>
           </router-link>
-
         </li>
       </ul>
     </div>
@@ -54,7 +56,7 @@
                     d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <img :src="logo" alt="Logo" class="h-10 ml-4">
+          <img :src="logo" alt="Logo" :class="[isSidebarOpen ? 'h-10 ml-4' : 'h-10 ml-2']">
         </div>
       </nav>
 
@@ -105,16 +107,12 @@ export default {
     };
 
     const logout = () => {
-  // Hapus semua data lokal
-    localStorage.clear();
+      localStorage.clear();
+      router.replace({ path: "/" }).then(() => {
+        location.reload();
+      });
+    };
 
-  // Redirect ke halaman login & reload
-  router.replace({ path: "/" }).then(() => {
-    location.reload();
-  });
-};
-
-    
     return {
       isSidebarOpen,
       toggleSidebar,
@@ -128,4 +126,10 @@ export default {
 </script>
 
 <style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
 </style>
