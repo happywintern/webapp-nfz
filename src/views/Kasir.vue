@@ -226,6 +226,11 @@ export default {
     const receivedCash = ref(0);
 
     const products = ref([]);
+    const buyerName = ref("");
+    const phoneNumber = ref("");
+    const latitude = ref(null);
+    const longitude = ref(null);
+
 
     const fetchProducts = async () => {
   try {
@@ -303,12 +308,22 @@ const totalPrice = computed(() => {
 });
 
 
+const handleDeliveryChange = () => {
+  if (deliveryMethod.value === "delivery") {
+    const saved = localStorage.getItem("selectedAddressData");
+    if (!saved) {
+      router.push("/select-address");
+    } else {
+      const parsed = JSON.parse(saved);
+      selectedAddress.value = parsed.address;
+      buyerName.value = parsed.buyerName;
+      phoneNumber.value = parsed.phoneNumber;
+      latitude.value = parsed.latitude;
+      longitude.value = parsed.longitude;
+    }
+  }
+};
 
-    const handleDeliveryChange = () => {
-      if (deliveryMethod.value === "delivery" && !selectedAddress.value) {
-        router.push("/select-address");
-      }
-    };
 
     const confirmPayment = async () => {
       console.log("Cart length at confirmPayment:", cart.value.length);
@@ -319,7 +334,7 @@ const totalPrice = computed(() => {
   try {
     const payload = {
       staff_id: localStorage.getItem('user_id'),
-      pickup_method: deliveryMethod.value === 'pickup' ? 'langsung' : 'delivery',
+      pickup_method: deliveryMethod.value,
       payment_method: selectedPaymentMethod.value?.toLowerCase(), // ensure lowercase for backend
       payment_status: selectedPaymentStatus.value, // e.g., 'paid' or 'unpaid'
       order_status: 'pending',
@@ -327,8 +342,14 @@ const totalPrice = computed(() => {
       items: cart.value.map(item => ({
     product_id: item.product_id || item.id,  // adjust depending on your cart object
     quantity: item.qty // ✅ Use `qty` instead of `quantity`
-
-  }))
+  })),
+  ...(deliveryMethod.value === "delivery" && {
+    buyer_name: buyerName.value,
+    phone_number: phoneNumber.value,
+    latitude: latitude.value,
+    longitude: longitude.value
+  })
+  
     };
     console.log("Selected payment method:", selectedPaymentMethod.value);
 

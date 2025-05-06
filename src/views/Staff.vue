@@ -4,13 +4,16 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
         <!-- Search Input -->
         <div class="relative w-full sm:w-64">
-          <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
-          <input
-            type="text"
-            placeholder="Search"
-            class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-full"
-          />
-        </div>
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+            <input
+              type="text"
+              v-model="searchQuery"
+              placeholder="Search"
+              @input="searchStaff"
+              class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-full"
+            />
+          </div>
+
 
         <!-- Tambah Button -->
         <button
@@ -37,17 +40,16 @@
           </thead>
           <tbody class="text-gray-800">
             <tr
-              v-for="staff in staffList"
+              v-for="(staff, index) in filteredStaffList"
               :key="staff.id"
               class="border-b hover:bg-gray-50 transition"
             >
-              <td class="py-4 px-6">{{ staff.id }}</td>
+              <td class="py-4 px-6">{{ index + 1 }}</td>
               <td class="py-4 px-6">{{ staff.name }}</td>
               <td class="py-4 px-6">{{ staff.role }}</td>
               <td class="py-4 px-6">{{ staff.email }}</td>
               <td class="py-4 px-6">{{ staff.phone }}</td>
-
-                            <td class="py-4 px-6">
+              <td class="py-4 px-6">
                 <div class="flex justify-center items-center space-x-4">
                   <button @click="editStaff(staff.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-pen"></i>
@@ -63,49 +65,102 @@
       </div>
     </div>
 
-    <!-- Modal Tambah Staff -->
+    <!-- Modal Tambah/Edit Staff -->
     <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h2 class="text-lg font-semibold mb-4 text-[#1A327B]">
-  {{ isEditMode ? 'Edit Staff' : 'Tambah Staff' }}
-</h2>        <div class="space-y-4">
+        <h2 class="text-lg font-semibold mb-4 text-[#1A327B] text-center">
+          {{ isEditMode ? 'Edit Staff' : 'Tambah Staff' }}
+        </h2>
+        <div class="space-y-4">
           <div>
             <label class="block text-sm font-semibold">Name</label>
-            <input type="text" v-model="newStaff.name" class="w-full px-4 py-2 border rounded" />
+            <input
+              type="text"
+              v-model="newStaff.name"
+              class="w-full px-4 py-2 border rounded-lg"
+            />
           </div>
           <div>
             <label class="block text-sm font-semibold">Role</label>
-            <input type="text" v-model="newStaff.role" class="w-full px-4 py-2 border rounded" />
+            <select
+              v-model="newStaff.role"
+              class="w-full px-4 py-2 border rounded-lg"
+            >
+              <option value="">Pilih Role</option>
+              <option value="admin">Admin</option>
+              <option value="cashier">Cashier</option>
+            </select>
           </div>
           <div>
             <label class="block text-sm font-semibold">Email</label>
-            <input type="email" v-model="newStaff.email" class="w-full px-4 py-2 border rounded" />
+            <input
+              type="email"
+              v-model="newStaff.email"
+              class="w-full px-4 py-2 border rounded-lg"
+            />
           </div>
           <div>
             <label class="block text-sm font-semibold">Phone Number</label>
-            <input type="email" v-model="newStaff.phone" class="w-full px-4 py-2 border rounded" />
+            <input
+              type="text"
+              v-model="newStaff.phone"
+              class="w-full px-4 py-2 border rounded-lg"
+            />
+          </div>
+          <div v-if="!isEditMode">
+            <label class="block text-sm font-semibold">Password</label>
+            <input
+              type="password"
+              v-model="newStaff.password"
+              class="w-full px-4 py-2 border rounded-lg"
+            />
           </div>
         </div>
         <div class="mt-6 flex justify-end space-x-2">
           <button @click="resetModal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
-          <button 
-  @click="isEditMode ? updateStaff() : addStaff()" 
-  class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800">
-  {{ isEditMode ? 'Simpan Perubahan' : 'Tambah' }}
-</button>        </div>
+          <button
+            @click="isEditMode ? updateStaff() : addStaff()"
+            class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800"
+          >
+            {{ isEditMode ? 'Simpan Perubahan' : 'Tambah' }}
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Notification -->
+    <div v-if="showNotification" class="fixed inset-0 flex items-center justify-center z-50">
+      <div :class="['p-4 rounded-lg shadow-md text-center text-sm max-w-xs w-full', notificationClass]">
+        <p>{{ notificationMessage }}</p>
+      </div>
+    </div>
+
+        <!-- Confirm Delete Modal -->
+    <div v-if="showDeleteConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+        <h2 class="text-lg font-semibold text-[#1A327B] text-center mb-4">Confirm Deletion</h2>
+        <p class="text-center">Are you sure you want to delete this staff member?</p>
+        <div class="mt-6 flex justify-center space-x-4">
+          <button @click="cancelDelete" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+            Cancel
+          </button>
+          <button @click="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
   </AppLayout>
 </template>
+
 <script>
 import axios from "axios";
 import AppLayout from "@/components/Layout.vue";
 
 export default {
   name: "StaffPage",
-  components: {
-    AppLayout,
-  },
+  components: { AppLayout },
   data() {
     return {
       staffList: [],
@@ -116,220 +171,175 @@ export default {
         name: "",
         role: "",
         email: "",
+        phone: "",
+        password: "",
       },
-
+      searchQuery: "",
+      showNotification: false,
+      notificationMessage: "",
+      notificationClass: "", // Class untuk styling notifikasi
+      showDeleteConfirmation: false,
+      deleteStaffId: null,
     };
   },
   mounted() {
     this.fetchStaff();
   },
+  computed: {
+    filteredStaffList() {
+      return this.staffList.filter(staff =>
+        staff.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        staff.email.toLowerCase().includes(this.searchQuery.toLowerCase())
+      );
+    }
+  },
   methods: {
     async fetchStaff() {
-  try {
-    const token = localStorage.getItem('token');
-    console.log('Token from localStorage:', token);
-
-    if (!token) {
-      alert('No token found, please login first.');
-      this.$router.push('/stok'); 
-      return;
-    }
-
-    const response = await axios.get('https://nurulfrozen.dgeo.id/api/users', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json', // <-- this fixes your problem!
-      },
-    });
-
-    console.log('Real API response:', response.data);
-
-    if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
-      console.error('Received HTML instead of JSON. Probably not authenticated.');
-      alert('Session expired or unauthorized. Please login again.');
-      this.$router.push('/');
-      return;
-    }
-
-    this.staffList = response.data.map(user => ({
-      id: user.user_id,
-      name: user.name,
-      role: user.role,
-      email: user.email,
-      phone: user.phone,
-      createdAt: user.created_at,
-      updatedAt: user.updated_at,
-      lastActive: user.updated_at,
-      isOnline: false,
-    }));
-
-    
-
-  } catch (error) {
-    console.error('Failed to fetch staff:', error);
-    alert('Gagal mengambil data staff.');
-  }
-},
-
-resetModal() {
-      this.newStaff = { name: "", role: "", email: "", phone: "" };
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          alert('No token found, please login first.');
+          this.$router.push('/');
+          return;
+        }
+        const response = await axios.get('https://nurulfrozen.dgeo.id/api/users', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        });
+        this.staffList = response.data.map(user => ({
+          id: user.user_id,
+          name: user.name,
+          role: user.role,
+          email: user.email,
+          phone: user.phone,
+          createdAt: user.created_at,
+          updatedAt: user.updated_at,
+        }));
+      } catch (error) {
+        console.error('Failed to fetch staff:', error);
+        this.showNotificationMessage('Gagal mengambil data staff.', 'error');
+      }
+    },
+    resetModal() {
+      this.newStaff = { name: "", role: "", email: "", phone: "", password: "" };
       this.showAddModal = false;
       this.isEditMode = false;
       this.editStaffId = null;
     },
-
-editStaff(id) {
-  const staff = this.staffList.find(s => s.id === id);
-  if (!staff) {
-    alert('Staff not found.');
-    return;
-  }
-
-  this.newStaff = {
-    name: staff.name,
-    role: staff.role,
-    email: staff.email,
-    phone: staff.phone
-  };
-
-  this.editStaffId = id;
-  this.isEditMode = true;
-  this.showAddModal = true;
-},
-
-
-    async deleteStaff(id) {
-  if (!confirm(`Yakin ingin menghapus staff dengan ID ${id}?`)) return;
-
-  const token = localStorage.getItem('token');
-  if (!token) {
-    alert('No token found, please login first.');
-    this.$router.push('/login');
-    return;
-  }
-
-  try {
-    const response = await axios.delete(`https://nurulfrozen.dgeo.id/api/users/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      }
-    });
-
-    console.log('Delete response:', response.data);
-
-    // Hapus dari daftar lokal jika berhasil
-    this.staffList = this.staffList.filter((staff) => staff.id !== id);
-
-    alert('Staff berhasil dihapus.');
-
-  } catch (error) {
-    console.error('Gagal menghapus staff:', error);
-    alert('Gagal menghapus staff dari server.');
-  }
-},
-
-    getLoginStatusColor(dateString, isOnline) {
-      if (isOnline) return "bg-green-200 text-green-800";
-
-      const lastLogin = new Date(dateString);
-      const today = new Date();
-      const diffTime = today - lastLogin;
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays === 0) return "bg-yellow-200 text-yellow-800";
-      if (diffDays <= 3) return "bg-orange-200 text-orange-800";
-      if (diffDays <= 7) return "bg-red-200 text-red-800";
-      return "bg-gray-200 text-gray-800";
+    editStaff(id) {
+      const staff = this.staffList.find(s => s.id === id);
+      if (!staff) return alert('Staff not found.');
+      this.newStaff = { name: staff.name, role: staff.role, email: staff.email, phone: staff.phone, password: "" };
+      this.editStaffId = id;
+      this.isEditMode = true;
+      this.showAddModal = true;
     },
-
-
+    async deleteStaff(id) {
+      this.deleteStaffId = id;
+      this.showDeleteConfirmation = true;
+    },
+    cancelDelete() {
+      this.showDeleteConfirmation = false;
+      this.deleteStaffId = null;
+    },
+    async confirmDelete() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('No token found, please login first.');
+        this.$router.push('/login');
+        return;
+      }
+      try {
+        await axios.delete(`https://nurulfrozen.dgeo.id/api/users/${this.deleteStaffId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        this.staffList = this.staffList.filter(s => s.id !== this.deleteStaffId);
+        this.showDeleteConfirmation = false;
+        this.showNotificationMessage('Staff berhasil dihapus.', 'success');
+      } catch (error) {
+        console.error('Gagal menghapus staff:', error);
+        this.showDeleteConfirmation = false;
+        this.showNotificationMessage('Gagal menghapus staff dari server.', 'error');
+      }
+    },
     async addStaff() {
-  if (!this.newStaff.name || !this.newStaff.role || !this.newStaff.email) {
-    alert("Semua field harus diisi.");
-    return;
-  }
-
-  const token = localStorage.getItem('token');
-  if (!token) {
-    alert('No token found, please login first.');
-    this.$router.push('/');
-    return;
-  }
-
-  try {
-    const response = await axios.post('https://nurulfrozen.dgeo.id/api/users', {
-      name: this.newStaff.name,
-      role: this.newStaff.role,
-      email: this.newStaff.email,
-      phone: this.newStaff.phone || '', // optional field
-      password: '123456', // You can change this if needed
-
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+      if (!this.newStaff.name || !this.newStaff.role || !this.newStaff.email) {
+        return this.showNotificationMessage("Semua field harus diisi.", "error");
       }
-    });
-
-    console.log('Staff created:', response.data);
-
-    // After successful POST, fetch latest data from API
-    this.fetchStaff();
-
-    // Reset form and close modal
-    this.newStaff = { name: "", role: "", email: "" };
-    this.showAddModal = false;
-
-  } catch (error) {
-    console.error('Failed to create staff:', error);
-    alert('Gagal menambahkan staff.');
-  }
-},
-
-async updateStaff() {
-  if (!this.newStaff.name || !this.newStaff.role || !this.newStaff.email) {
-    alert("Semua field harus diisi.");
-    return;
-  }
-
-  const token = localStorage.getItem('token');
-  if (!token) {
-    alert('No token found, please login first.');
-    this.$router.push('/');
-    return;
-  }
-
-  try {
-    const response = await axios.put(`https://nurulfrozen.dgeo.id/api/users/${this.editStaffId}`, {
-      name: this.newStaff.name,
-      role: this.newStaff.role,
-      email: this.newStaff.email,
-      phone: this.newStaff.phone || '',
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('No token found, please login first.');
+        this.$router.push('/');
+        return;
       }
-    });
+      const data = {
+        name: this.newStaff.name,
+        role: this.newStaff.role,
+        email: this.newStaff.email,
+        phone: this.newStaff.phone || '',
+        password: this.newStaff.password,
+      };
 
-    console.log('Staff updated:', response.data);
+      try {
+        await axios.post('https://nurulfrozen.dgeo.id/api/users', data, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        });
+        this.showAddModal = false;
+        this.fetchStaff();
+        this.showNotificationMessage("Staff berhasil ditambahkan.", "success");
+      } catch (error) {
+        console.error("Failed to add staff:", error);
+        this.showNotificationMessage("Gagal menambahkan staff.", "error");
+      }
+    },
+    async updateStaff() {
+      if (!this.newStaff.name || !this.newStaff.role || !this.newStaff.email) {
+        return this.showNotificationMessage("Semua field harus diisi.", "error");
+      }
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('No token found, please login first.');
+        this.$router.push('/');
+        return;
+      }
+      const data = {
+        name: this.newStaff.name,
+        role: this.newStaff.role,
+        email: this.newStaff.email,
+        phone: this.newStaff.phone || '',
+      };
 
-    // After successful PUT, fetch latest data
-    this.fetchStaff();
-
-    // Reset form and close modal
-    this.newStaff = { name: "", role: "", email: "" };
-    this.showAddModal = false;
-    this.isEditMode = false;
-    this.editStaffId = null;
-
-    alert('Staff berhasil diperbarui.');
-
-  } catch (error) {
-    console.error('Failed to update staff:', error);
-    alert('Gagal memperbarui staff.');
-  }
-},
-
-
+      try {
+        await axios.put(`https://nurulfrozen.dgeo.id/api/users/${this.editStaffId}`, data, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        });
+        this.showAddModal = false;
+        this.fetchStaff();
+        this.showNotificationMessage("Staff berhasil diperbarui.", "success");
+      } catch (error) {
+        console.error("Failed to update staff:", error);
+        this.showNotificationMessage("Gagal memperbarui staff.", "error");
+      }
+    },
+    showNotificationMessage(message, type) {
+      this.notificationMessage = message;
+      this.notificationClass = type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white";
+      this.showNotification = true;
+      setTimeout(() => {
+        this.showNotification = false;
+      }, 3000);
+    },
+    searchStaff() {
+      // Search is done in the computed property filteredStaffList.
+    },
   },
 };
 </script>
