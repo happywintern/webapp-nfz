@@ -12,7 +12,7 @@
             v-if="item.logout"
             @click="logout"
             class="flex items-center space-x-3 py-3 px-4 mx-2 rounded-xl transition-colors duration-200
-                   text-[#6E6A7C] hover:bg-red-100 hover:text-red-600 w-full text-left"
+                   text-[#6E6A7C] hover:bg-red-100 hover:text-red-600 w-5/6 text-left"
           >
             <component :is="item.icon" class="w-5 h-5" />
             <transition name="fade">

@@ -265,7 +265,7 @@ onMounted(() => {
     cart.value.push({
       ...product,
 
-      product_id: product.id, // make sure this exists
+      product_id: product.id, 
       qty: 1,
       price: parseFloat(product.price) || 0,
       name: product.name,
@@ -320,13 +320,13 @@ const totalPrice = computed(() => {
     const payload = {
       staff_id: localStorage.getItem('user_id'),
       pickup_method: deliveryMethod.value === 'pickup' ? 'langsung' : 'delivery',
-      payment_method: selectedPaymentMethod.value?.toLowerCase(), // ensure lowercase for backend
-      payment_status: selectedPaymentStatus.value, // e.g., 'paid' or 'unpaid'
+      payment_method: selectedPaymentMethod.value?.toLowerCase(), 
+      payment_status: selectedPaymentStatus.value, 
       order_status: 'pending',
-      distribution: selectedDistribution.value, // e.g., 'NFZ' or 'QR'
+      distribution: selectedDistribution.value, 
       items: cart.value.map(item => ({
-    product_id: item.product_id || item.id,  // adjust depending on your cart object
-    quantity: item.qty // ✅ Use `qty` instead of `quantity`
+    product_id: item.product_id || item.id,  
+    quantity: item.qty //
 
   }))
     };
