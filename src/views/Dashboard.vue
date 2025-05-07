@@ -154,9 +154,9 @@ export default {
     // Fungsi fetch data dashboard
     const fetchDashboardData = async () => {
       try {
-        const response = await axios.get("/api/dashboard", {
+        const response = await axios.get("https://nurulfrozen.dgeo.id/api/dashboard", {
           // Pastikan token diset di header jika diperlukan, misalnya:
-          // headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         const data = response.data.data;
         totalSales.value = data.total_sales;

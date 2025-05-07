@@ -104,7 +104,7 @@ const confirmAddress = () => {
   }));
 
   addressConfirmed.value = true;
-  router.push("/kasir"); 
+  router.back();
 };
 
     const tileLayerUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";

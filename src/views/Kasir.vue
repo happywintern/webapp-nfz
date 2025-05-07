@@ -325,35 +325,44 @@ const handleDeliveryChange = () => {
 };
 
 
-    const confirmPayment = async () => {
-      console.log("Cart length at confirmPayment:", cart.value.length);
-      console.log("Full cart:", JSON.stringify(cart.value, null, 2));
-
-      console.log("Cart contents:", JSON.parse(JSON.stringify(cart.value)));
+   const confirmPayment = async () => {
+  console.log("Cart length at confirmPayment:", cart.value.length);
+  console.log("Full cart:", JSON.stringify(cart.value, null, 2));
+  console.log("Selected payment method:", selectedPaymentMethod.value);
 
   try {
+    let deliveryData = null;
+
+    if (deliveryMethod.value === "delivery") {
+      const saved = localStorage.getItem("selectedAddressData");
+      if (saved) {
+        deliveryData = JSON.parse(saved);
+      } else {
+        alert("Silakan pilih alamat pengiriman terlebih dahulu.");
+        return;
+      }
+    }
+
     const payload = {
       staff_id: localStorage.getItem('user_id'),
       pickup_method: deliveryMethod.value,
-      payment_method: selectedPaymentMethod.value?.toLowerCase(), // ensure lowercase for backend
-      payment_status: selectedPaymentStatus.value, // e.g., 'paid' or 'unpaid'
+      payment_method: selectedPaymentMethod.value?.toLowerCase(),
+      payment_status: selectedPaymentStatus.value,
       order_status: 'pending',
-      distribution: selectedDistribution.value, // e.g., 'NFZ' or 'QR'
+      distribution: selectedDistribution.value,
       items: cart.value.map(item => ({
-    product_id: item.product_id || item.id,  // adjust depending on your cart object
-    quantity: item.qty // ✅ Use `qty` instead of `quantity`
-  })),
-  ...(deliveryMethod.value === "delivery" && {
-    buyer_name: buyerName.value,
-    phone_number: phoneNumber.value,
-    latitude: latitude.value,
-    longitude: longitude.value
-  })
-  
+        product_id: item.product_id || item.id,
+        quantity: item.qty
+      })),
+      ...(deliveryMethod.value === "delivery" && {
+        recipient_name: deliveryData.buyerName,
+        recipient_phone: deliveryData.phoneNumber,
+        latitude: deliveryData.latitude,
+        longitude: deliveryData.longitude
+      })
     };
-    console.log("Selected payment method:", selectedPaymentMethod.value);
 
-    console.log("Payload items being sent:", JSON.stringify(payload.items, null, 2));
+    console.log("🛒 Payload being sent:", JSON.stringify(payload, null, 2));
 
     const response = await axios.post('https://nurulfrozen.dgeo.id/api/sales-orders', payload, {
       headers: {
@@ -362,12 +371,13 @@ const handleDeliveryChange = () => {
       }
     });
 
-    console.log('Order created:', response.data);
+    console.log('✅ Order created:', response.data);
 
-    // Clear cart
+    // Clean up
     cart.value = [];
+    localStorage.removeItem("selectedAddressData");
 
-    // Show popup based on payment method
+    // Show payment popup
     if (selectedPaymentMethod.value === "cash") {
       showCashPopup.value = true;
     } else {
@@ -375,10 +385,11 @@ const handleDeliveryChange = () => {
     }
 
   } catch (err) {
-    console.error('Failed to create order:', err.response?.data || err);
+    console.error('❌ Failed to create order:', err.response?.data || err);
     alert("Gagal menyimpan pesanan. Pastikan semua field sudah diisi dengan benar.");
   }
 };
+
 
 
     const finishCashPayment = () => {
