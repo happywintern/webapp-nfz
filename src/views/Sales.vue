@@ -29,40 +29,38 @@
           </thead>
           <tbody class="text-gray-800">
             <tr
-    v-for="transaction in filteredTransactions"
-    :key="transaction.id"
-    class="border-b hover:bg-gray-50 transition"
-  >
-            <td class="py-2 px-4">{{ transaction.id }}</td>
+              v-for="transaction in filteredTransactions"
+              :key="transaction.id"
+              class="border-b hover:bg-gray-50 transition"
+            >
+              <td class="py-2 px-4">{{ transaction.id }}</td>
               <td class="py-2 px-4">{{ transaction.date }}</td>
               <td class="py-2 px-4">{{ transaction.time }}</td>
               <td class="py-2 px-4">
                 <span 
-      class="status-label"
-      :class="{
-        'done': transaction.status === 'Done',
-        'on-progress': transaction.status === 'On Progress'
-      }"
-    >
-      {{ transaction.status }}
-    </span>
+                  class="status-label"
+                  :class="{
+                    'done': transaction.status === 'Done',
+                    'on-progress': transaction.status === 'On Progress'
+                  }"
+                >
+                  {{ transaction.status }}
+                </span>
               </td>
               <td class="py-2 px-4">{{ transaction.amount }} LKR</td>
               <td class="py-2 px-4">{{ transaction.payment }}</td>
               <td class="py-2 px-4">{{ transaction.distribution }}</td>
               <td class="py-4 px-6">
                 <div class="flex justify-center items-center space-x-4">
-                  <button @click="editSale(transaction.id)" class="text-gray-600 hover:text-blue-600">
+                  <button @click="editTransaction(transaction.id)" class="text-gray-600 hover:text-blue-600">
                     <i class="fas fa-pen"></i>
                   </button>
-                  <button @click="deleteSale(transaction.id)" class="text-gray-600 hover:text-red-600">
+                  <button @click="deleteTransaction(transaction.id)" class="text-gray-600 hover:text-red-600">
                     <i class="fas fa-trash"></i>
                   </button>
-                  <!-- View Transaction Details Button (custom icon) -->
-                  <button @click="viewDetails(transaction.id)" class="text-gray-600 hover:text-green-600">
-                    <img src="@/assets/icons/vertical_split.svg" alt="View" class="w-5 h-5" />
+                  <button @click="viewTransaction(transaction.id)" class="text-gray-600 hover:text-green-600">
+                    <img src="'assets/icons/vertical_split.svg'" alt="View" class="w-5 h-5" />
                   </button>
-
                 </div>
               </td>
             </tr>
@@ -74,24 +72,24 @@
 </template>
 
 <script>
-  import { ref, computed } from "vue";
-  import logoImage from "@/assets/image.png";
-  import AppLayout from "@/components/Layout.vue"; // Add this import
+import { ref, computed, onMounted } from "vue";
+import axios from "axios";
+import logoImage from "@/assets/image.png";
+import AppLayout from "@/components/Layout.vue";
 
+import { HomeIcon, ShoppingCartIcon, BanknotesIcon, CubeIcon, StarIcon } from "@heroicons/vue/24/solid";
 
-  import { HomeIcon, ShoppingCartIcon, BanknotesIcon, CubeIcon, StarIcon } from "@heroicons/vue/24/solid"; // Import Heroicons
-  
-  export default {
-    name: "TransactionsPage",
-    components: {
-      AppLayout, // Register the component
-    },
-    setup() {
-      const selectedFilter = ref("all");
-      const selectedDate = ref("today");
-      const searchQuery = ref("");
-      const isSidebarOpen = ref(false);
-    const activeMenu = ref("Sales"); // Default selected menu
+export default {
+  name: "SalesPage",
+  components: {
+    AppLayout,
+  },
+  setup() {
+    const selectedFilter = ref("all");
+    const selectedDate = ref("today");
+    const searchQuery = ref("");
+    const isSidebarOpen = ref(false);
+    const activeMenu = ref("Sales");
     const logo = logoImage;
 
     const menuItems = [
@@ -110,60 +108,89 @@
       activeMenu.value = name;
     };
 
-  
-      const transactions = ref([
-        { id: "CO-001", date: "13-11-2023", time: "10:45:12", status: "Done", amount: 1500, payment: "Cash", distribution: "NFZ" },
-        { id: "CO-002", date: "13-11-2023", time: "10:45:12", status: "On Progress", amount: 1500, payment: "Qr", distribution: "NFZ" },
-        { id: "CO-003", date: "13-11-2023", time: "10:45:12", status: "On Progress", amount: 1500, payment: "Qr", distribution: "NFZ" },
-        { id: "CO-004", date: "13-11-2023", time: "10:45:12", status: "On Progress", amount: 1500, payment: "Qr", distribution: "NFZ" },
-      ]);
-  
-      const totalRevenue = computed(() => {
-        return transactions.value.reduce((sum, transaction) => sum + transaction.amount, 0);
-      });
-  
-      const filteredTransactions = computed(() => {
-        return transactions.value.filter((transaction) => {
-          const matchesFilter = selectedFilter.value === "all" || transaction.status === (selectedFilter.value === "done" ? "Done" : "On Progress");
-          const matchesSearch = transaction.id.toLowerCase().includes(searchQuery.value.toLowerCase());
-          return matchesFilter && matchesSearch;
+    const transactions = ref([]);
+
+    const fetchSalesOrders = async () => {
+      try {
+        const response = await axios.get("https://nurulfrozen.dgeo.id/api/sales-orders", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
         });
-      });
-// Add the missing editTransaction function
-const editTransaction = (id) => {
-        alert(`Edit transaction: ${id}`);
-      };    
-  
-const deleteTransaction = (id) => {
-      if (confirm(`Are you sure you want to delete transaction ${id}?`)) {
-        transactions.value = transactions.value.filter(transactions => transactions.id !== id);
+        if (response.data && response.data.data) {
+          transactions.value = response.data.data.map((order, index) => {
+            const dateObj = new Date(order.created_at);
+            const date = dateObj.toLocaleDateString('en-GB');
+            const time = dateObj.toLocaleTimeString('en-GB');
+            const status = order.order_status === 'pending' ? 'On Progress' : order.order_status;
+            return {
+              id: `ORD-${index + 1}`,
+              date,
+              time,
+              status,
+              amount: Number(order.total_amount),
+              payment: order.payment_method,
+              distribution: order.distribution
+            };
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching sales orders:", error);
       }
     };
+
+    onMounted(() => {
+      fetchSalesOrders();
+    });
+
+    const totalRevenue = computed(() => {
+      return transactions.value.reduce((sum, transaction) => sum + transaction.amount, 0);
+    });
+
+    const filteredTransactions = computed(() => {
+      return transactions.value.filter((transaction) => {
+        const matchesFilter = selectedFilter.value === "all" || transaction.status === (selectedFilter.value === "done" ? "Done" : "On Progress");
+        const matchesSearch = transaction.id.toLowerCase().includes(searchQuery.value.toLowerCase());
+        return matchesFilter && matchesSearch;
+      });
+    });
+
+    const editTransaction = (id) => {
+      alert(`Edit transaction: ${id}`);
+    };
+
+    const deleteTransaction = (id) => {
+      if (confirm(`Are you sure you want to delete transaction ${id}?`)) {
+        transactions.value = transactions.value.filter(transaction => transaction.id !== id);
+      }
+    };
+
     const viewTransaction = (id) => {
       alert(`View transaction: ${id}`);
     };
-  
-      return {
-        selectedFilter,
-        selectedDate,
-        searchQuery,
-        transactions,
-        filteredTransactions,
-        totalRevenue,
-        editTransaction,
-        deleteTransaction,
-        viewTransaction,
-        isSidebarOpen, 
-        toggleSidebar, 
-        activeMenu, 
-        setActiveMenu, 
-        menuItems,
-        logo
-      };
-    }
-  };
-  </script>
-<!-- Font Awesome CDN (scoped for safety) -->
+
+    return {
+      selectedFilter,
+      selectedDate,
+      searchQuery,
+      transactions,
+      filteredTransactions,
+      totalRevenue,
+      editTransaction,
+      deleteTransaction,
+      viewTransaction,
+      isSidebarOpen,
+      toggleSidebar,
+      activeMenu,
+      setActiveMenu,
+      menuItems,
+      logo
+    };
+  }
+};
+</script>
+
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
@@ -175,6 +202,10 @@ const deleteTransaction = (id) => {
   border-radius: 20px;
   text-align: center;
   width: max-content;
+}
+
+.done {
+  background-color: #28a745; /* Green */
 }
 
 .done {
