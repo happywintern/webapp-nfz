@@ -151,14 +151,16 @@ export default {
       }).format(profit.value);
     });
 
-    // Fungsi fetch data dashboard
+
     const fetchDashboardData = async () => {
       try {
         const response = await axios.get("https://nurulfrozen.dgeo.id/api/dashboard", {
-          // Pastikan token diset di header jika diperlukan, misalnya:
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
         });
-        const data = response.data.data;
+        const data = response.data;
         totalSales.value = data.total_sales;
         transactionCount.value = data.transaction_count;
         productSalesTotal.value = data.product_sales.reduce((acc, item) => acc + Number(item.total_sold || 0), 0);
@@ -202,7 +204,6 @@ export default {
       });
     };
 
-    // Update peta menggunakan Leaflet
     const updateMap = () => {
       // Inisialisasi peta walaupun mapData kosong
       const map = L.map("map").setView([-6.375, 106.829], 13);
@@ -210,7 +211,6 @@ export default {
         attribution: "&copy; OpenStreetMap contributors",
       }).addTo(map);
       
-      // Jika mapData ada, tambahkan marker
       if (mapData.value && mapData.value.length) {
         mapData.value.forEach(item => {
           L.marker([item.latitude, item.longitude])
