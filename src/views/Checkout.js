@@ -8,6 +8,9 @@ export const useCheckoutStore = defineStore('checkout', () => {
   const phoneNumber = ref('');
   const latitude = ref(null);
   const longitude = ref(null);
+    const selectedAddress = ref('');
+  const isPaying = ref(false); // 👈 Add this
+
 
   return {
     cart,
@@ -16,5 +19,7 @@ export const useCheckoutStore = defineStore('checkout', () => {
     phoneNumber,
     latitude,
     longitude,
+    selectedAddress,
+    isPaying
   };
 });

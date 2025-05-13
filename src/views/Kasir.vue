@@ -39,8 +39,8 @@
 
           
         </div>
-
-        <!-- RIGHT: Cart -->
+<!---RIGHT SECTION-->
+        <!-- Cart -->
         <div class="w-1/3 bg-white p-4 rounded-xl shadow border border-[#1A327B] flex flex-col h-full">
           <template v-if="!isPaying">
             <h2 class="font-bold text-lg flex items-center text-black border-b pb-2 mb-4">
@@ -205,16 +205,15 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useCheckoutStore } from './Checkout.js';
 import axios from "axios";
+import { storeToRefs } from 'pinia';
+
 
 export default {
   name: "KasirPage",
   components: { AppLayout },
   setup() {
     const router = useRouter();
-    const isPaying = ref(false);
     const selectedPaymentMethod = ref('');
-    const deliveryMethod = ref("pickup");
-    const selectedAddress = ref(null);
     const selectedPaymentStatus = ref("unpaid");
     const selectedDistribution = ref("NFZ");
 
@@ -231,6 +230,8 @@ export default {
     const longitude = ref(null);
 
     const checkout = useCheckoutStore();
+    const { isPaying, deliveryMethod, selectedAddress } = storeToRefs(checkout);
+
 
     const fetchProducts = async () => {
       try {

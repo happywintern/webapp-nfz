@@ -106,10 +106,10 @@ const confirmAddress = () => {
   checkout.phoneNumber = phoneNumber.value;
   checkout.latitude = latitude;
   checkout.longitude = longitude;
+  checkout.selectedAddress = selectedAddress.value;
 
-
-  addressConfirmed.value = true;
-  router.back();
+checkout.isPaying = true; // 👈 Force show summary section
+router.back();  // Or whatever your main page is
 };
 
 
