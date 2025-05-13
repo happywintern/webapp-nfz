@@ -65,6 +65,8 @@ import "leaflet/dist/leaflet.css";
 import axios from "axios";
 import { LMap, LTileLayer, LMarker } from "@vue-leaflet/vue-leaflet";
 import { useRouter } from "vue-router";
+import { useCheckoutStore } from './Checkout.js';
+
 
 
 export default {
@@ -82,9 +84,14 @@ export default {
     const searchResults = ref([]);
     const selectedAddress = ref(null);
     const buyerName = ref("");
-const phoneNumber = ref("");
-const addressConfirmed = ref(false);
-const router = useRouter();
+    const phoneNumber = ref("");
+    const addressConfirmed = ref(false);
+    const router = useRouter();
+
+const checkout = useCheckoutStore();
+
+checkout.buyerName = buyerName.value;
+checkout.phoneNumber = phoneNumber.value;
 
 const confirmAddress = () => {
   if (!selectedAddress.value || !buyerName.value || !phoneNumber.value || !markerPosition.value) {
@@ -94,18 +101,17 @@ const confirmAddress = () => {
 
   const [latitude, longitude] = markerPosition.value;
 
-  // Save to localStorage or state management (you can replace this with Vuex or Pinia if used)
-  localStorage.setItem("selectedAddressData", JSON.stringify({
-    address: selectedAddress.value,
-    buyerName: buyerName.value,
-    phoneNumber: phoneNumber.value,
-    latitude,
-    longitude
-  }));
+  // Save to Pinia store
+  checkout.buyerName = buyerName.value;
+  checkout.phoneNumber = phoneNumber.value;
+  checkout.latitude = latitude;
+  checkout.longitude = longitude;
+
 
   addressConfirmed.value = true;
   router.back();
 };
+
 
     const tileLayerUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 

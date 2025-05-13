@@ -40,7 +40,7 @@
           
         </div>
 
-        <!-- RIGHT: Cart / Payment Summary -->
+        <!-- RIGHT: Cart -->
         <div class="w-1/3 bg-white p-4 rounded-xl shadow border border-[#1A327B] flex flex-col h-full">
           <template v-if="!isPaying">
             <h2 class="font-bold text-lg flex items-center text-black border-b pb-2 mb-4">
@@ -199,13 +199,12 @@
     </div>
   </AppLayout>
 </template>
-
 <script>
 import AppLayout from "@/components/Layout.vue";
-import { ref, computed, onMounted  } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useCheckoutStore } from './Checkout.js';
 import axios from "axios";
-
 
 export default {
   name: "KasirPage",
@@ -213,11 +212,11 @@ export default {
   setup() {
     const router = useRouter();
     const isPaying = ref(false);
-    const selectedPaymentMethod = ref(''); // Default value can be 'Cash', 'QR', etc.
+    const selectedPaymentMethod = ref('');
     const deliveryMethod = ref("pickup");
     const selectedAddress = ref(null);
-    const selectedPaymentStatus = ref("unpaid"); // Usually "unpaid" until paid
-    const selectedDistribution = ref("NFZ"); // Default or based on selection
+    const selectedPaymentStatus = ref("unpaid");
+    const selectedDistribution = ref("NFZ");
 
     const showCashPopup = ref(false);
     const showCashDone = ref(false);
@@ -231,166 +230,149 @@ export default {
     const latitude = ref(null);
     const longitude = ref(null);
 
+    const checkout = useCheckoutStore();
 
     const fetchProducts = async () => {
-  try {
-    const response = await axios.get('https://nurulfrozen.dgeo.id/api/products', {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
+      try {
+        const response = await axios.get('https://nurulfrozen.dgeo.id/api/products', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
 
-    console.log("Full API response:", response);
+        console.log("Full API response:", response);
 
-
-    // Map the API response to match frontend usage
-    products.value = response.data.data.map((item) => ({
-      id: item.product_id,
-      name: item.product_name,
-      image: item.image,
-      price: parseFloat(item.price),
-    }));
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-onMounted(() => {
-  fetchProducts();
-});
-
-    const cart = ref([]);
-
-    const addToCart = (product) => {
-  const existing = cart.value.find(item => item.id === product.id);
-
-  if (existing) {
-    existing.qty++;
-  } else {
-    cart.value.push({
-      ...product,
-
-      product_id: product.id, // make sure this exists
-      qty: 1,
-      price: parseFloat(product.price) || 0,
-      name: product.name,
-      image: product.image
-
-    });
-  }
-
-  console.log("Cart after add:", JSON.parse(JSON.stringify(cart.value)));
-};
-const increaseQty = (index) => {
-  console.log('Increasing qty for index', index, cart.value[index]);
-  if (cart.value[index]) {
-    cart.value[index].qty++;
-    console.log('New qty:', cart.value[index].qty);
-  }
-};
-
-
-const decreaseQty = (index) => {
-  if (cart.value[index] && cart.value[index].qty > 1) {
-    cart.value[index].qty--;
-  } else {
-    // Optional: remove item if qty reaches 0
-    cart.value.splice(index, 1);
-  }
-};
-
-const totalPrice = computed(() => {
-  return cart.value.reduce((sum, item) => {
-    const qty = parseInt(item.qty) || 0;
-    const price = parseFloat(item.price) || 0;
-    return sum + (qty * price);
-  }, 0);
-});
-
-
-const handleDeliveryChange = () => {
-  if (deliveryMethod.value === "delivery") {
-    const saved = localStorage.getItem("selectedAddressData");
-    if (!saved) {
-      router.push("/select-address");
-    } else {
-      const parsed = JSON.parse(saved);
-      selectedAddress.value = parsed.address;
-      buyerName.value = parsed.buyerName;
-      phoneNumber.value = parsed.phoneNumber;
-      latitude.value = parsed.latitude;
-      longitude.value = parsed.longitude;
-    }
-  }
-};
-
-
-   const confirmPayment = async () => {
-  console.log("Cart length at confirmPayment:", cart.value.length);
-  console.log("Full cart:", JSON.stringify(cart.value, null, 2));
-  console.log("Selected payment method:", selectedPaymentMethod.value);
-
-  try {
-    let deliveryData = null;
-
-    if (deliveryMethod.value === "delivery") {
-      const saved = localStorage.getItem("selectedAddressData");
-      if (saved) {
-        deliveryData = JSON.parse(saved);
-      } else {
-        alert("Silakan pilih alamat pengiriman terlebih dahulu.");
-        return;
+        products.value = response.data.data.map((item) => ({
+          id: item.product_id,
+          name: item.product_name,
+          image: item.image,
+          price: parseFloat(item.price),
+        }));
+      } catch (error) {
+        console.error(error);
       }
-    }
-
-    const payload = {
-      staff_id: localStorage.getItem('user_id'),
-      pickup_method: deliveryMethod.value,
-      payment_method: selectedPaymentMethod.value?.toLowerCase(),
-      payment_status: selectedPaymentStatus.value,
-      order_status: 'pending',
-      distribution: selectedDistribution.value,
-      items: cart.value.map(item => ({
-        product_id: item.product_id || item.id,
-        quantity: item.qty
-      })),
-      ...(deliveryMethod.value === "delivery" && {
-        recipient_name: deliveryData.buyerName,
-        recipient_phone: deliveryData.phoneNumber,
-        latitude: deliveryData.latitude,
-        longitude: deliveryData.longitude
-      })
     };
 
-    console.log("🛒 Payload being sent:", JSON.stringify(payload, null, 2));
-
-    const response = await axios.post('https://nurulfrozen.dgeo.id/api/sales-orders', payload, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-        'Content-Type': 'application/json'
-      }
+    onMounted(() => {
+      fetchProducts();
     });
 
-    console.log('✅ Order created:', response.data);
 
-    // Clean up
-    cart.value = [];
-    localStorage.removeItem("selectedAddressData");
+    const addToCart = (product) => {
+      const existing = checkout.cart.find(item => item.id === product.id);
 
-    // Show payment popup
-    if (selectedPaymentMethod.value === "cash") {
-      showCashPopup.value = true;
+      if (existing) {
+        existing.qty++;
+      } else {
+        checkout.cart.push({
+          ...product,
+          product_id: product.id,
+          qty: 1,
+          price: parseFloat(product.price) || 0,
+          name: product.name,
+          image: product.image
+        });
+      }
+
+      console.log("Cart after add:", JSON.parse(JSON.stringify(checkout.cart)));
+    };
+
+    const increaseQty = (index) => {
+      if (checkout.cart[index]) checkout.cart[index].qty++;
+    };
+
+    const decreaseQty = (index) => {
+      if (checkout.cart[index] && checkout.cart[index].qty > 1) {
+        checkout.cart[index].qty--;
+      } else {
+        checkout.cart.splice(index, 1);
+      }
+    };
+
+    const totalPrice = computed(() => {
+      return checkout.cart.reduce((sum, item) => {
+        const qty = parseInt(item.qty) || 0;
+        const price = parseFloat(item.price) || 0;
+        return sum + qty * price;
+      }, 0);
+    });
+const handleDeliveryChange = () => {
+  if (deliveryMethod.value === "delivery") {
+    if (
+      !checkout.buyerName ||
+      !checkout.phoneNumber ||
+      !checkout.latitude ||
+      !checkout.longitude
+    ) {
+      // If any required field is missing, go to address selection
+      router.push("/select-address");
     } else {
-      showQRPopup.value = true;
-    }
+      // If address already filled, update local refs
+      selectedAddress.value = `(${checkout.latitude}, ${checkout.longitude})`; // Optional, for display
+      buyerName.value = checkout.buyerName;
+      phoneNumber.value = checkout.phoneNumber;
+      latitude.value = checkout.latitude;
+      longitude.value = checkout.longitude;
+            isPaying.value = true; // 👈 stay in summary view
 
-  } catch (err) {
-    console.error('❌ Failed to create order:', err.response?.data || err);
-    alert("Gagal menyimpan pesanan. Pastikan semua field sudah diisi dengan benar.");
+    }
   }
 };
 
+    const confirmPayment = async () => {
+      console.log("Cart length at confirmPayment:", checkout.cart.length);
+      console.log("Full cart:", JSON.stringify(checkout.cart, null, 2));
+      console.log("Selected payment method:", selectedPaymentMethod.value);
 
+      if (deliveryMethod.value === "delivery") {
+        if (!checkout.buyerName || !checkout.phoneNumber || !checkout.latitude || !checkout.longitude) {
+          alert("Silakan isi semua informasi pengiriman terlebih dahulu.");
+          return;
+        }
+      }
+
+      const payload = {
+        staff_id: localStorage.getItem('user_id'),
+        pickup_method: deliveryMethod.value,
+        payment_method: selectedPaymentMethod.value?.toLowerCase(),
+        payment_status: selectedPaymentStatus.value,
+        order_status: 'pending',
+        distribution: selectedDistribution.value,
+        items: checkout.cart.map(item => ({
+          product_id: item.product_id || item.id,
+          quantity: item.qty
+        })),
+        ...(deliveryMethod.value === "delivery" && {
+          recipient_name: checkout.buyerName,
+          recipient_phone: checkout.phoneNumber,
+          latitude: checkout.latitude,
+          longitude: checkout.longitude
+        })
+      };
+
+      console.log("🛒 Payload being sent:", JSON.stringify(payload, null, 2));
+
+      try {
+        const response = await axios.post('https://nurulfrozen.dgeo.id/api/sales-orders', payload, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Order created:', response.data);
+        checkout.cart = [];
+
+        if (selectedPaymentMethod.value === "cash") {
+          showCashPopup.value = true;
+        } else {
+          showQRPopup.value = true;
+        }
+      } catch (err) {
+        console.error('Failed to create order:', err.response?.data || err);
+        alert("Gagal menyimpan pesanan. Pastikan semua field sudah diisi dengan benar.");
+      }
+    };
 
     const finishCashPayment = () => {
       showCashPopup.value = false;
@@ -403,7 +385,7 @@ const handleDeliveryChange = () => {
     };
 
     const resetCart = () => {
-      cart.value = [];
+      checkout.cart = [];
       isPaying.value = false;
       showCashPopup.value = false;
       showCashDone.value = false;
@@ -422,7 +404,7 @@ const handleDeliveryChange = () => {
       showQRPopup,
       showQRDone,
       receivedCash,
-      cart,
+      cart: checkout.cart,
       products,
       addToCart,
       increaseQty,

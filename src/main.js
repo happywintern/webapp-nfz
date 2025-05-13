@@ -4,10 +4,11 @@ import router from './router';
 import './assets/tailwind.css';
 import "@fontsource/inter";
 
-// import { createPinia } from 'pinia';
+import { createPinia } from 'pinia';
 
-// const pinia = createPinia();
-// app.use(pinia);
+const app = createApp(App);
 
+app.use(router);
+app.use(createPinia());
 
-createApp(App).use(router).mount('#app');
+app.mount('#app');
