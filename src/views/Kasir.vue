@@ -3,7 +3,7 @@
     <div class="p-6 h-[calc(100vh-3rem)] overflow-hidden">
       <div class="flex h-full">
         <!-- LEFT: Product List -->
-        <div class="w-2/3 pr-4 overflow-y-auto">
+        <div class="w-2/3 pr-4 overflow-y-auto hide-scrollbar">
           <!-- Filter & Search -->
           <div class="flex items-center justify-between mb-4 gap-4">
             <select class="border border-[#1A327B] text-black font-semibold px-3 py-2 rounded-lg w-1/4">
@@ -343,10 +343,8 @@ const totalPrice = computed(() => {
 
     console.log('Order created:', response.data);
 
-    // Clear cart
     cart.value = [];
 
-    // Show popup based on payment method
     if (selectedPaymentMethod.value === "cash") {
       showCashPopup.value = true;
     } else {

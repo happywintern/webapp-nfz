@@ -340,7 +340,6 @@ const token = localStorage.getItem('token');
       const transformed = rawProducts.map(product => {
         const fullImageUrl = product.image ? `https://nurulfrozen.dgeo.id${product.image}` : null;
 
-        // Log and validate the image URL
         if (fullImageUrl) {
           const img = new Image();
           img.src = fullImageUrl;
@@ -409,9 +408,7 @@ async function confirmDelete() {
   }
 
   closeDeleteModal();
-}
-
-  
+} 
 
       return {
         isSidebarOpen,
