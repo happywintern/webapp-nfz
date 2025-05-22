@@ -1,13 +1,11 @@
 <template>
   <AppLayout>
-  <AppLayout>
     <div class="min-h-screen bg-gray-100 flex">
       <div class="flex-1 flex p-6">
         <button @click="goBack" class="absolute top-4 left-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded shadow z-50">
           Back
         </button>
         <!-- Left Side: Map -->
-        <div class="w-2/3 pr-4" v-if="!addressConfirmed">
         <div class="w-2/3 pr-4" v-if="!addressConfirmed">
           <h2 class="text-lg font-semibold mb-2">Pilih Lokasi Antar</h2>
           <l-map 
@@ -22,41 +20,7 @@
           </l-map>
         </div>
 
-        <!-- Right Side: Address Selection & Info -->
-        <div class="w-full md:w-1/3 bg-white p-4 rounded-lg shadow-lg">
-          <h2 class="font-bold text-lg mb-4">Pilih Lokasi Antar</h2>
-
-          <div v-if="!addressConfirmed">
-  <div class="relative">
-    <input v-model="searchQuery" @input="debounceSearch" placeholder="Cari alamat di Depok..." class="border px-4 py-2 rounded w-full">
-    <span class="absolute right-3 top-2 text-gray-400">🔍</span>
-  </div>
-
-  <ul v-if="searchResults.length" class="mt-2 border rounded-lg shadow-sm">
-    <li v-for="(result, index) in searchResults" :key="index" 
-        @click="selectAddress(result)" 
-        class="p-2 cursor-pointer hover:bg-gray-100 border-b">
-      <strong>{{ result.name }}</strong> {{ result.address }}
-    </li>
-  </ul>
-
-  <div v-if="selectedAddress" class="mt-6 p-4 bg-gray-100 rounded-lg">
-    <h3 class="text-sm font-semibold">Alamat yang Dipilih</h3>
-    <p class="text-gray-600 text-sm">{{ selectedAddress }}</p>
-
-    <!-- These fields MUST be visible BEFORE confirmAddress() -->
-    <label class="block text-sm font-semibold mt-3 mb-1">Nama Penerima</label>
-    <input v-model="buyerName" class="w-full border px-2 py-1 rounded mb-3" />
-
-    <label class="block text-sm font-semibold mb-1">Nomor Telepon</label>
-    <input v-model="phoneNumber" class="w-full border px-2 py-1 rounded" />
-  </div>
-
-  <button @click="confirmAddress" class="w-full bg-blue-700 text-white py-2 rounded mt-4">
-    Gunakan Alamat Ini
-  </button>
-</div>
-
+        
             
 
         <!-- Right Side: Address Selection & Info -->
@@ -98,6 +62,7 @@
         </div>
       </div>
     </div>
+  
   </AppLayout>
 </template>
 
