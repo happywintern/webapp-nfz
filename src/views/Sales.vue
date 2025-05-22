@@ -13,14 +13,34 @@
           />
         </div>
         <button
-          @click="exportToPDF"
+          @click="exportPDF"
           class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
         >
           Export to PDF
         </button>
       </div>
 
-      <div class="bg-white rounded-xl shadow-md overflow-hidden hide-scrollbar">
+      <!-- Loading and Error Messages -->
+      <div v-if="isLoading" class="bg-white rounded-xl shadow-md p-8 text-center mb-4">
+        <div class="flex justify-center">
+          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1A327B]"></div>
+        </div>
+        <p class="mt-2 text-gray-600">Loading sales data...</p>
+      </div>
+      
+      <div v-if="errorMessage && !isLoading" class="bg-white rounded-xl shadow-md p-4 mb-4 border-l-4 border-yellow-400">
+        <div class="flex items-center">
+          <svg class="w-6 h-6 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          <p class="text-gray-700">{{ errorMessage }}</p>
+        </div>
+        <div class="mt-2">
+          <p class="text-sm text-gray-600">Showing demo data instead. You can still interact with the table.</p>
+        </div>
+      </div>
+
+      <div v-if="!isLoading" class="bg-white rounded-xl shadow-md overflow-hidden hide-scrollbar">
         <table class="w-full text-sm">
           <thead class="text-left">
             <tr class="text-gray-700">
@@ -59,12 +79,6 @@
               <td class="py-2 px-4">{{ transaction.distribution }}</td>
               <td class="py-4 px-6">
                 <div class="flex justify-center items-center space-x-4">
-                  <button @click="editTransaction(transaction.id)" class="text-gray-600 hover:text-blue-600">
-                    <i class="fas fa-pen"></i>
-                  </button>
-                  <button @click="deleteTransaction(transaction.id)" class="text-gray-600 hover:text-red-600">
-                    <i class="fas fa-trash"></i>
-                  </button>
                   <button @click="viewTransaction(transaction.id)" class="text-gray-600 hover:text-green-600">
                     <img src="@/assets/icons/vertical_split.svg" alt="View" class="w-5 h-5" />
                   </button>
@@ -102,9 +116,8 @@ import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import logoImage from "@/assets/image.png";
 import AppLayout from "@/components/Layout.vue";
-
 import { HomeIcon, ShoppingCartIcon, BanknotesIcon, CubeIcon, StarIcon } from "@heroicons/vue/24/solid";
-
+import { exportPDF } from "./exporttopdf.js";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -138,8 +151,12 @@ export default {
     };
 
     const transactions = ref([]);
+    const isLoading = ref(false);
+    const errorMessage = ref("");
 
     const fetchSalesOrders = async () => {
+      isLoading.value = true;
+      errorMessage.value = "";
       try {
         const response = await axios.get("https://nurulfrozen.dgeo.id/api/sales-orders", {
           headers: {
@@ -166,6 +183,13 @@ export default {
         }
       } catch (error) {
         console.error("Error fetching sales orders:", error);
+        errorMessage.value = "Failed to load sales data.";
+        transactions.value = [
+          { id: "ORD-1", date: "01/01/2025", time: "10:00", status: "Done", amount: 1000, payment: "Cash", distribution: "Store" },
+          { id: "ORD-2", date: "02/01/2025", time: "11:00", status: "On Progress", amount: 2000, payment: "Card", distribution: "Online" }
+        ];
+      } finally {
+        isLoading.value = false;
       }
     };
 
@@ -209,25 +233,13 @@ export default {
       }
     };
 
-    const editTransaction = (id) => {
-      alert(`Edit transaction: ${id}`);
-    };
-
-    const deleteTransaction = (id) => {
-      if (confirm(`Are you sure you want to delete transaction ${id}?`)) {
-        transactions.value = transactions.value.filter(transaction => transaction.id !== id);
-      }
-    };
-
     const viewTransaction = (id) => {
       alert(`View transaction: ${id}`);
     };
 
-    // New method to export to PDF
     const exportToPDF = async () => {
       const doc = new jsPDF();
 
-      // Get current month and year for the title
       const now = new Date();
       const monthNames = [
         "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -236,12 +248,8 @@ export default {
       const month = monthNames[now.getMonth()];
       const year = now.getFullYear();
 
-      // Add title
       doc.setFontSize(14);
       doc.text(`Laporan Keuangan Bulan ${month} ${year}`, 14, 15);
-
-      // Fetch product sales data from API or compute from transactions
-      // Assuming an API endpoint exists to get product sales summary for the month
       let productSales = [];
       try {
         const token = localStorage.getItem('token');
@@ -262,7 +270,6 @@ export default {
         }
       } catch (error) {
         console.error("Error fetching product sales summary:", error);
-        // Fallback dummy data if API fails
         productSales = [
           { product: 'Produk A', buyPrice: 'Rp 10,000', sellPrice: 'Rp 15,000', soldStock: 100, profitPercent: '50%' },
           { product: 'Produk B', buyPrice: 'Rp 20,000', sellPrice: 'Rp 25,000', soldStock: 50, profitPercent: '25%' },
@@ -270,7 +277,6 @@ export default {
         ];
       }
 
-      // Define columns for the product sales table
       const columns = [
         { header: 'List Product', dataKey: 'product' },
         { header: 'Harga Belinya', dataKey: 'buyPrice' },
@@ -279,7 +285,6 @@ export default {
         { header: 'Keuntungan (%)', dataKey: 'profitPercent' }
       ];
 
-      // Add autotable to the PDF using imported autoTable function
       autoTable(doc, {
         columns,
         body: productSales,
@@ -305,8 +310,6 @@ export default {
       goToPreviousPage,
       goToNextPage,
       totalRevenue,
-      editTransaction,
-      deleteTransaction,
       viewTransaction,
       isSidebarOpen,
       toggleSidebar,
@@ -314,7 +317,10 @@ export default {
       setActiveMenu,
       menuItems,
       logo,
-      exportToPDF
+      exportToPDF,
+      exportPDF,
+      isLoading,
+      errorMessage
     };
   }
 };

@@ -46,7 +46,7 @@
     <!-- Main Content -->
     <div class="flex flex-col w-full">
       <!-- Topbar -->
-      <nav class="bg-white shadow-md py-4 px-6 flex items-center justify-between mb-2">
+      <nav class="bg-white shadow-sm py-4 px-6 flex items-center justify-between mb-2">
         <div class="flex items-center">
           <button @click="toggleSidebar" class="text-gray-700 hover:text-gray-900 focus:outline-none">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,7 +61,6 @@
         </div>
       </nav>
 
-      <!-- Page Content -->
       <main class="p-6">
         <slot></slot>
       </main>
@@ -99,7 +98,6 @@ export default {
       { name: "Stock",      label: "Stock",      icon: CubeIcon,         link: "/stok" },
       { name: "Supplier",   label: "Supplier",   icon: StarIcon,         link: "/supplier" },
       { name: "Staff",      label: "Staff",      icon: UserGroupIcon,    link: "/staff" },
-      // Logout item
       { name: "Logout",     label: "Keluar",     icon: ArrowLeftOnRectangleIcon, logout: true }
     ];
 

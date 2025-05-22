@@ -37,7 +37,7 @@
         <table class="w-full min-w-[800px] text-sm text-center">
           <thead class="text-gray-700">
             <tr>
-              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">ID</th>
+              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">No.</th>
         <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Name</th>
         <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Contact</th>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Action</th>
@@ -45,11 +45,11 @@
           </thead>
           <tbody class="text-gray-800">
             <tr
-              v-for="supplier in paginatedSuppliers"
+              v-for="(supplier, index) in paginatedSuppliers"
               :key="supplier.id"
               class="border-b hover:bg-gray-50 transition"
             >
-              <td class="py-4 px-6">{{ supplier.id }}</td>
+              <td class="py-4 px-6">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
               <td class="py-4 px-6">{{ supplier.name }}</td>
               <td class="py-4 px-6">{{ supplier.contact }}</td>
               <td class="py-4 px-6">
@@ -91,20 +91,16 @@
       <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
           <h2 class="text-lg font-semibold mb-4 text-[#1A327B]">Tambah Supplier</h2>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-semibold">Name</label>
-              <input type="text" v-model="newSupplier.name" class="w-full px-4 py-2 border rounded" />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold">Email</label>
-              <input type="email" v-model="newSupplier.email" class="w-full px-4 py-2 border rounded" />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold">Contact</label>
-              <input type="text" v-model="newSupplier.contact" class="w-full px-4 py-2 border rounded" />
-            </div>
-          </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold">Name</label>
+          <input type="text" v-model="newSupplier.name" class="w-full px-4 py-2 border rounded" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold">Contact</label>
+          <input type="text" v-model="newSupplier.contact" class="w-full px-4 py-2 border rounded" />
+        </div>
+      </div>
           <div class="mt-6 flex justify-end space-x-2">
             <button @click="showAddModal = false" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
             <button @click="addSupplier" class="px-4 py-2 bg-[#1A327B] text-white rounded hover:bg-blue-800">Tambah</button>
@@ -176,18 +172,33 @@ export default {
     // Fetch suppliers from API
     const fetchSuppliers = async () => {
       try {
-        const response = await fetch('https://nurulfrozen.dgeo.id/api/suppliers');
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No token found, please login first.');
+          return;
+        }
+        
+        const response = await fetch('https://nurulfrozen.dgeo.id/api/suppliers', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json'
+          }
+        });
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
-
-        suppliers.value = data.map(user => ({
-          id: user.id || user._id || '',
-          name: user.supplier_name || '',
-          email: '',
-          contact: user.phone || ''
+        
+        suppliers.value = data.map(supplier => ({
+          id: supplier.supplier_id.toString(),
+          name: supplier.supplier_name || '',
+          email: '', // API doesn't seem to return email
+          contact: supplier.phone || '',
+          address: supplier.address || ''
         }));
+        suppliers.value.sort((a, b) => a.name.localeCompare(b.name));
       } catch (error) {
         console.error('Failed to fetch suppliers:', error);
       }
@@ -216,8 +227,7 @@ export default {
     });
 
     const totalPages = computed(() => Math.ceil(filteredSuppliers.value.length / pageSize.value));
-
-    const newSupplier = ref({ name: '', email: '', contact: '' });
+    const newSupplier = ref({ name: '', contact: '' });
     const editedSupplier = ref({ id: '', name: '', email: '', contact: '' });
     const supplierToDelete = ref(null);
 
@@ -228,7 +238,7 @@ export default {
           : 0;
         const nextId = `SUP-${String(lastId + 1).padStart(3, '0')}`;
         suppliers.value.push({ id: nextId, ...newSupplier.value });
-        newSupplier.value = { name: '', email: '', contact: '' };
+        newSupplier.value = { name: '', contact: '' };
         showAddModal.value = false;
       } else {
         alert("Nama wajib diisi");

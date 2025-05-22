@@ -15,6 +15,33 @@
             <p><strong>Kategori   </strong>: {{ product.category }}</p>
             <p><strong>Harga Beli </strong>: {{ product.buyPrice }}</p>
             <p><strong>Harga Jual </strong>: {{ product.sellPrice }}</p>
+            <p>
+              <strong>Status      </strong>: 
+              <span :class="isProductActive ? 'text-green-600' : 'text-red-600'">
+                {{ isProductActive ? 'Tersedia' : 'Tidak Tersedia' }}
+              </span>
+            </p>
+          </div>
+          <div class="text-center mt-8 space-y-3">
+            <button
+              @click="updateProduct"
+              class="bg-[#1A327B] text-white font-semibold py-2 px-5 rounded-full hover:bg-[#16296A] transition w-48"
+            >
+              Edit
+            </button>
+            <button
+              @click="toggleProductAvailability"
+              class="bg-transparent border border-[#1A327B] text-[#1A327B] font-semibold py-2 px-5 rounded-full hover:bg-gray-100 transition w-48"
+            >
+              {{ isProductActive ? 'Tandai Tidak Tersedia' : 'Tandai Tersedia' }}
+            </button>
+          </div>
+
+          <!-- <div class="text-sm space-y-4 px-12">
+            <p><strong>Nama       </strong>: {{ product.name }}</p>
+            <p><strong>Kategori   </strong>: {{ product.category }}</p>
+            <p><strong>Harga Beli </strong>: {{ product.buyPrice }}</p>
+            <p><strong>Harga Jual </strong>: {{ product.sellPrice }}</p>
           </div>
           <div class="text-center mt-8">
             <button
@@ -23,7 +50,7 @@
           >
             Edit
     </button>
-          </div>
+          </div> -->
         </div>
 
         <!-- Right Container: Stock Table -->
@@ -206,7 +233,21 @@
     </div>
   </div>
 </div>
-
+    <div 
+    v-if="alertMessage" 
+    class="fixed top-4 right-4 max-w-md bg-white shadow-lg rounded-lg p-4 flex items-start z-50 border-l-4"
+    :class="{'border-red-500': alertType === 'error', 'border-green-500': alertType === 'success'}"
+  >
+    <div class="flex-1">
+      <p class="font-bold" :class="{'text-red-600': alertType === 'error', 'text-green-600': alertType === 'success'}">
+        {{ alertTitle }}
+      </p>
+      <p class="text-sm text-gray-700">{{ alertMessage }}</p>
+    </div>
+    <button @click="closeAlert" class="text-gray-500 hover:text-gray-700">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
 
   </AppLayout>
 </template>
@@ -231,14 +272,17 @@ export default {
         sellPrice: '',
         image: ''
       },
+      alertMessage: '',
+      alertTitle: '',
+      alertType: 'error',
       editedProduct: {
-  name: '',
-  category: '',
-  buyPrice: '',
-  sellPrice: '',
-  image: '',
-  imageFile: null // <-- for uploaded image
-},
+        name: '',
+        category: '',
+        buyPrice: '',
+        sellPrice: '',
+        image: '',
+        imageFile: null 
+      },
       newStock: {
         entryDate: '',
         expiredDate: '',
@@ -246,8 +290,14 @@ export default {
         purchase_price: ''
       },
       stockData: [],
-      products: [] // Added to prevent 'products is not defined' error
+      products: [],
+      isProductActive: true, 
     };
+  },
+  computed: {
+  totalAvailableStock() {
+    return this.stockData.reduce((total, item) => total + parseInt(item.stok || 0), 0);
+    }
   },
 
   created() {
@@ -287,6 +337,9 @@ export default {
           sellPrice: data.price,
           image: fullImageUrl
         };
+      const hasAvailableStock = data.inventory_entries && 
+                               data.inventory_entries.some(entry => entry.quantity > 0);
+      this.isProductActive = hasAvailableStock;
 
         this.stockData = (data.inventory_entries || []).map(entry => ({
           tanggalMasuk: new Date(entry.entry_date).toLocaleDateString(),
@@ -348,6 +401,43 @@ export default {
       });
     },
 
+    async toggleProductAvailability() {
+    // const productId = this.$route.params.id;
+    const token = localStorage.getItem('token');
+    
+    try {
+      if (this.isProductActive) {
+        // If currently active, set all stock to 0
+        await Promise.all(this.stockData.map(async (item) => {
+          if (item.stok > 0) {
+            await axios.patch(
+              `https://nurulfrozen.dgeo.id/api/inventory-entries/${item.id}`,
+              { quantity: 0 },
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  Accept: 'application/json'
+                }
+              }
+            );
+          }
+        }));
+        
+        alert("Produk ditandai tidak tersedia. Semua stok disetel ke 0.");
+      } else {
+        // If currently inactive, show modal to add stock
+        this.showAddStock = true;
+      }
+      
+      // Refresh data to update status
+      this.fetchProductData();
+      
+    } catch (error) {
+      console.error("❌ Failed to update product availability:", error.response?.data || error);
+      alert("Gagal mengubah status produk. " + (error.response?.data?.message || "Coba lagi nanti."));
+    }
+  },
     async saveProductUpdate() {
     const productId = this.$route.params.id;
     const token = localStorage.getItem('token');
@@ -394,35 +484,61 @@ export default {
 
 
 
-    async deleteStock(id) {
-      const token = localStorage.getItem('token');
-      if (!id) {
-        console.warn("❌ No ID provided for deleteStock.");
-        return;
-      }
+    showAlert(message, title = 'Notifikasi', type = 'error') {
+    this.alertMessage = message;
+    this.alertTitle = title;
+    this.alertType = type;
+    
+    // Auto-close after 5 seconds
+    setTimeout(() => {
+      this.closeAlert();
+    }, 5000);
+  },
+  
+  closeAlert() {
+    this.alertMessage = '';
+  },
+  
+  // Update deleteStock method
+  async deleteStock(id) {
+    const token = localStorage.getItem('token');
+    if (!id) {
+      this.showAlert("ID stok tidak ditemukan.", "Error", "error");
+      return;
+    }
 
-      try {
-        console.log("🗑️ Attempting to delete stock with ID:", id);
+    try {
+      console.log("🗑️ Attempting to delete stock with ID:", id);
 
-        const response = await axios.delete(`https://nurulfrozen.dgeo.id/api/inventory-entries/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          }
-        });
+      const response = await axios.delete(`https://nurulfrozen.dgeo.id/api/inventory-entries/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        }
+      });
 
-        console.log("✅ Stock item deleted:", response.data);
+      console.log("✅ Stock item deleted:", response.data);
+      this.showAlert("Stok berhasil dihapus.", "Sukses", "success");
+      
+      // Remove from local stockData array
+      this.stockData = this.stockData.filter(p => p.id !== id);
 
-        // Remove from local stockData array
-        this.stockData = this.stockData.filter(p => p.id !== id);
-
-      } catch (error) {
-        console.error("❌ Error deleting stock:", error.response?.data || error.message);
-        alert("Gagal menghapus stok.");
+    } catch (error) {
+      console.error("❌ Error deleting stock:", error.response?.data || error.message);
+      
+      if (error.response?.data?.message?.includes("used in orders")) {
+        this.showAlert(
+          "Stok ini tidak dapat dihapus karena telah digunakan dalam pesanan. Sebagai alternatif, Anda dapat membuat stok menjadi 0 untuk menyembunyikan produk.", 
+          "Tidak Dapat Menghapus", 
+          "error"
+        );
+      } else {
+        this.showAlert(error.response?.data?.message || "Gagal menghapus stok.", "Error", "error");
       }
     }
-  }
+  },
+  },
 };
 </script>
 
