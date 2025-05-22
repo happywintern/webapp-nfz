@@ -66,6 +66,8 @@ import axios from "axios";
 import { LMap, LTileLayer, LMarker } from "@vue-leaflet/vue-leaflet";
 import { useRouter } from "vue-router";
 import { useCheckoutStore } from './Checkout.js';
+import AppLayout from '@/components/Layout.vue'; // adjust this path if needed
+
 
 
 
@@ -74,7 +76,8 @@ export default {
   components: {
     LMap,
     LTileLayer,
-    LMarker
+    LMarker,
+    AppLayout
   },
   setup() {
     const mapCenter = ref([-6.3949, 106.8227]); // Depok
