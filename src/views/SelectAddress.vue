@@ -72,7 +72,7 @@ import "leaflet/dist/leaflet.css";
 import axios from "axios";
 import { LMap, LTileLayer, LMarker } from "@vue-leaflet/vue-leaflet";
 import { useRouter } from "vue-router";
-import { useCheckoutStore } from './Checkout.js';
+import { useCheckoutStore } from './checkout.js';
 import AppLayout from '@/components/Layout.vue'; // adjust this path if needed
 
 

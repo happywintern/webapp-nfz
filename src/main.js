@@ -8,9 +8,6 @@ import { createPinia } from 'pinia';
 
 const app = createApp(App);
 
-import { createPinia } from 'pinia';
-
-
 app.use(router);
 app.use(createPinia());
 
