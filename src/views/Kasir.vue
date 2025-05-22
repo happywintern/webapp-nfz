@@ -203,10 +203,11 @@
 import AppLayout from "@/components/Layout.vue";
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useCheckoutStore } from './Checkout.js';
+import { useCheckoutStore } from './checkout.js';
 import axios from "axios";
 import { storeToRefs } from 'pinia';
 
+import { storeToRefs } from 'pinia';
 
 
 export default {
@@ -237,29 +238,31 @@ export default {
 
 
     const fetchProducts = async () => {
-      try {
-        const response = await axios.get('https://nurulfrozen.dgeo.id/api/products', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
+  try {
+    const response = await axios.get('https://nurulfrozen.dgeo.id/api/products', {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
 
-        console.log("Full API response:", response);
+    console.log("Full API response:", response);
 
-        products.value = response.data.data.map((item) => ({
-          id: item.product_id,
-          name: item.product_name,
-          image: item.image,
-          price: parseFloat(item.price),
-        }));
-      } catch (error) {
-        console.error(error);
-      }
-    };
+    products.value = response.data.data.map((item) => ({
+      id: item.product_id,
+      name: item.product_name,
+      image: item.image,
+      price: parseFloat(item.price),
+    }));
+  } catch (error) {
+    console.error(error);
+  }
+};
+    
 
     onMounted(() => {
       fetchProducts();
     });
+  
 
 
     const addToCart = (product) => {
@@ -423,6 +426,6 @@ const handleDeliveryChange = () => {
       handleDeliveryChange,
       resetCart,
     };
-  },
+  }
 };
 </script>
