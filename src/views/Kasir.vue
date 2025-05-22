@@ -222,6 +222,15 @@ export default {
     const receivedCash = ref(0);
 
     const products = ref([]);
+    const buyerName = ref("");
+    const phoneNumber = ref("");
+    const latitude = ref(null);
+    const longitude = ref(null);
+
+
+    const checkout = useCheckoutStore();
+    const { isPaying, deliveryMethod, selectedAddress } = storeToRefs(checkout);
+
 
     const fetchProducts = async () => {
       try {
