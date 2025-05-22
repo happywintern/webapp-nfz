@@ -208,6 +208,7 @@ import axios from "axios";
 import { storeToRefs } from 'pinia';
 
 
+
 export default {
   name: "KasirPage",
   components: { AppLayout },
@@ -228,6 +229,8 @@ export default {
     const phoneNumber = ref("");
     const latitude = ref(null);
     const longitude = ref(null);
+    const cart = ref([]);
+
 
     const checkout = useCheckoutStore();
     const { isPaying, deliveryMethod, selectedAddress } = storeToRefs(checkout);
