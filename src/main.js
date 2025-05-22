@@ -4,10 +4,12 @@ import router from './router';
 import './assets/tailwind.css';
 import "@fontsource/inter";
 import '@/assets/css/hide-scrollbar.css';
-
 import { createPinia } from 'pinia';
 
 const app = createApp(App);
+
+import { createPinia } from 'pinia';
+
 
 app.use(router);
 app.use(createPinia());

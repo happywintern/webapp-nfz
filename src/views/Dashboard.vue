@@ -44,7 +44,16 @@
             </div>
 
             <!-- Laba -->
-            <div class="bg-green-100 p-4 rounded-xl shadow flex items-start space-x-4 max-w-[360px] w-full">
+            <div class="bg-[#FFB6E7] p-4 rounded-xl shadow flex items-start space-x-4 max-w-[360px] w-full">
+              <div class="bg-[#A83788] text-white p-2 rounded-full">
+                <PresentationChartLineIcon class="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p class="text-xl font-bold text-[#A83788]">{{ formattedProfit }}</p>
+                <p class="text-sm text-[#752359]">Laba Penjualan</p>
+              </div>
+            </div>
+            <!-- <div class="bg-green-100 p-4 rounded-xl shadow flex items-start space-x-4 max-w-[360px] w-full">
               <div class="bg-green-500 text-white p-2 rounded-full">
                 <ShoppingBagIcon class="w-6 h-6" />
               </div>
@@ -52,7 +61,7 @@
                 <p class="text-xl font-bold text-green-800">{{ formattedProfit }}</p>
                 <p class="text-sm text-green-800">Laba</p>
               </div>
-            </div>
+            </div> -->
           </div>
         </div>
 
@@ -67,24 +76,51 @@
 
       <!-- Bagian Bawah : Pesanan On Progress dan Map -->
       <div class="bg-white rounded-2xl shadow px-6 pt-7 pb-6 mt-6">
-        <h2 class="text-xl font-bold text-blue-900 border-b pb-2 mb-4 text-center">
-          Pesanan On Progress
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
+          <h2 class="text-xl font-bold text-blue-900">
+            Pesanan On Progress
+          </h2>
+          <input
+            v-model="searchQuery"
+            @input="filterMarkersByName(searchQuery)"
+            type="text"
+            placeholder="Search by customer name"
+            class="border border-gray-300 rounded px-3 py-1 w-full max-w-xs"
+          />
+        </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
           <!-- Kiri: Tabel Pesanan -->
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
               <thead class="bg-gray-50 text-gray-700 font-semibold">
                 <tr>
                   <th class="px-4 py-2 text-left">Nama Pemesan</th>
-                  <th class="px-4 py-2 text-left">Alamat</th>
+                  <th class="px-4 py-2 text-center">Alamat</th>
                   <th class="px-4 py-2 text-left">Status</th>
                 </tr>
               </thead>
           <tbody class="bg-white divide-y divide-gray-100">
             <tr v-for="order in paginatedOrders" :key="order.order_id">
-              <td class="px-4 py-2 font-medium text-blue-600">{{ order.buyer_name }}</td>
-              <td class="px-4 py-2">{{ order.address || '-' }}</td>
+              <td class="px-4 py-2 font-medium text-blue-600">
+              {{ order.buyer_name !== '-' ? order.buyer_name : 'Customer #' + order.order_id }}
+              </td>
+              <!-- <td class="px-4 py-2 font-medium text-blue-600">{{ order.buyer_name }}</td> -->
+              <!-- <td class="px-4 py-2">{{ order.address || '-' }}</td> -->
+              <td class="px-4 py-2 cursor-pointer text-center hover:text-blue-600 hover:underline" @click="focusOnMarker(order)">
+                <template v-if="order.address === 'Loading...'">
+                  <div class="flex items-center space-x-2">
+                    <div class="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+                    <span>Loading...</span>
+                  </div>
+                </template>
+                <template v-else-if="order.address === 'No location data' || order.address === 'Address unavailable'">
+                  {{ order.address }}
+                </template>
+                <template v-else>
+                  {{ truncateAddress(order.address) }}
+                  <span class="text-xs text-blue-500 ml-1">(click to view)</span>
+                </template>
+              </td>
               <td class="px-4 py-2">
                 <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -118,7 +154,7 @@
             </div>
           </div>
           <!-- Kanan: Peta Dinamis -->
-          <div id="map" class="w-full h-64 mt-0 md:mt-0"></div>
+          <div id="map" class="w-full h-64 mt-0 md:mt-0 relative"></div>
         </div>
       </div>
     </div>
@@ -155,7 +191,7 @@ L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
 });
-import { ChartBarIcon, ArrowUturnLeftIcon, ShoppingBagIcon } from "@heroicons/vue/24/solid";
+import { ChartBarIcon, ArrowUturnLeftIcon, ShoppingBagIcon, PresentationChartLineIcon } from "@heroicons/vue/24/solid";
 
 export default {
   name: "DashboardPage",
@@ -163,7 +199,8 @@ export default {
     AppLayout,
     ChartBarIcon,
     ArrowUturnLeftIcon,
-    ShoppingBagIcon
+    ShoppingBagIcon,
+    PresentationChartLineIcon
   },
   setup() {
     const totalSales = ref(0);
@@ -199,10 +236,9 @@ export default {
     };
     const mapData = ref([]);
     
-    // Computed property untuk menampilkan nama bulan saat ini
+
     const currentMonth = computed(() => {
       const date = new Date();
-      // Gunakan opsi sederhana untuk mengambil nama bulan (dalam bahasa Inggris; bisa diubah)
       return date.toLocaleString('default', { month: 'long' });
     });
 
@@ -221,6 +257,23 @@ export default {
     });
 
 
+    // Helper function for reverse geocoding using Nominatim OpenStreetMap API
+    const reverseGeocode = async (lat, lon) => {
+      try {
+        const response = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+          params: {
+            lat,
+            lon,
+            format: 'json'
+          }
+        });
+        return response.data.display_name || '-';
+      } catch (error) {
+        console.error('Reverse geocoding error:', error);
+        return '-';
+      }
+    };
+
     const fetchDashboardData = async () => {
       try {
         const response = await axios.get("https://nurulfrozen.dgeo.id/api/dashboard", {
@@ -235,19 +288,112 @@ export default {
         productSalesTotal.value = data.product_sales.reduce((acc, item) => acc + Number(item.total_sold || 0), 0);
         profit.value = data.profit;
         chartData.value = data.chart_data;
-        orders.value = data.orders_in_progress;
-        mapData.value = data.map_data;
+
+        // Merge orders_in_progress and map_data by order_id to add latitude, longitude
+        const mapDataByOrderId = {};
+        if (data.map_data && Array.isArray(data.map_data)) {
+          data.map_data.forEach(item => {
+            if (item.order_id) {
+              mapDataByOrderId[item.order_id] = item;
+            }
+          });
+        }
+        // data.map_data.forEach(item => {
+        //   mapDataByOrderId[item.order_id] = item;
+        // });
+
+        // For each order, add latitude, longitude, but skip address fetching here for performance
+        const ordersWithLocation = data.orders_in_progress.map(order => {
+          const mapItem = mapDataByOrderId[order.order_id];
+          
+          return {
+            ...order,
+            latitude: mapItem?.latitude || null,
+            longitude: mapItem?.longitude || null,
+            address: 'Loading...', 
+            buyer_name: mapItem?.recipient_name || 'Customer #' + order.order_id
+          };
+        });
+        // const ordersWithLocation = data.orders_in_progress.map(order => {
+        //   const mapItem = mapDataByOrderId[order.order_id];
+        //   if (mapItem && mapItem.latitude && mapItem.longitude) {
+        //     return {
+        //       ...order,
+        //       latitude: mapItem.latitude,
+        //       longitude: mapItem.longitude,
+        //       address: '-', // placeholder, will fetch on marker click
+        //       buyer_name: mapItem.recipient_name || '-'
+        //     };
+        //   } else {
+        //     return {
+        //       ...order,
+        //       latitude: null,
+        //       longitude: null,
+        //       address: '-',
+        //       buyer_name: '-'
+        //     };
+        //   }
+        // });
+
+        orders.value = ordersWithLocation;
+        mapData.value = data.map_data || [];
+
         updateChart();
         updateMap();
+
+        fetchAddressesForOrders();
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       }
     };
+    
+        // Function to truncate long addresses
+    const truncateAddress = (address) => {
+      if (!address) return '-';
+      if (address.length <= 30) return address;
+      return address.substring(0, 30) + '...';
+    };
 
-    // Update grafik menggunakan Chart.js
+    // Function to focus on a marker when an address is clicked
+    const focusOnMarker = (order) => {
+      if (!order.latitude || !order.longitude) return;
+      
+      // Find the corresponding marker
+      const markerItem = allMarkers.find(marker => {
+        const markerLatLng = marker.marker.getLatLng();
+        return markerLatLng.lat === parseFloat(order.latitude) && 
+              markerLatLng.lng === parseFloat(order.longitude);
+      });
+      
+      if (markerItem) {
+        // Center the map on the marker location
+        mapInstance.setView([order.latitude, order.longitude], 15);
+        
+        // Open the popup
+        markerItem.marker.openPopup();
+      }
+    };
+
+    // Add a new function to fetch addresses for all orders with coordinates
+    const fetchAddressesForOrders = async () => {
+      for (const order of orders.value) {
+        if (order.latitude && order.longitude) {
+          try {
+            await new Promise(resolve => setTimeout(resolve, 200));
+            const address = await reverseGeocode(order.latitude, order.longitude);
+            order.address = address;
+          } catch (error) {
+            console.error(`Error fetching address for order ${order.order_id}:`, error);
+            order.address = 'Address unavailable';
+          }
+        } else {
+          order.address = 'No location data';
+        }
+      }
+    };
+
     const updateChart = () => {
       const ctx = document.getElementById("salesChart").getContext("2d");
-      // Jika data chart kosong, gunakan array kosong
       const labels = chartData.value.map(item => item.date) || [];
       const dataSet = chartData.value.map(item => item.daily_total) || [];
       new Chart(ctx, {
@@ -273,21 +419,113 @@ export default {
       });
     };
 
-    const updateMap = () => {
-      // Inisialisasi peta walaupun mapData kosong
-      const map = L.map("map").setView([-6.375, 106.829], 13);
+    let mapInstance = null;
+    let markersLayer = null;
+    let allMarkers = [];
+
+    const updateMap = (filteredMapData = null) => {
+      if (mapInstance) {
+        mapInstance.remove();
+      }
+      mapInstance = L.map("map").setView([-6.375, 106.829], 13);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors",
-      }).addTo(map);
-      
-      if (mapData.value && mapData.value.length) {
-        mapData.value.forEach(item => {
-          L.marker([item.latitude, item.longitude])
-            .addTo(map)
-            .bindPopup(`<b>${item.buyer_name}</b><br/>Order: ${item.order_number}`);
+      }).addTo(mapInstance);
+
+      if (markersLayer) {
+        markersLayer.clearLayers();
+      } else {
+        markersLayer = L.layerGroup().addTo(mapInstance);
+      }
+
+      // Create a map from order_id to order info (address and buyer_name)
+      const orderInfoMap = {};
+      orders.value.forEach(order => {
+        orderInfoMap[order.order_id] = {
+          address: order.address || '-',
+          buyer_name: order.buyer_name || '-'
+        };
+      });
+
+      const dataToUse = filteredMapData || mapData.value;
+
+      allMarkers = [];
+
+      if (dataToUse && dataToUse.length) {
+        dataToUse.forEach(item => {
+          if (item.latitude && item.longitude) {
+            const info = orderInfoMap[item.order_id] || { address: '-', buyer_name: '-' };
+            const marker = L.marker([item.latitude, item.longitude]);
+            marker.orderId = item.order_id; // Add a reference to the order ID
+            marker.addTo(markersLayer);
+
+            // Lazy load address on popup open
+            marker.on('popupopen', async () => {
+              if (info.address === '-' || info.address === 'Loading...') {
+                const address = await reverseGeocode(item.latitude, item.longitude);
+                info.address = address;
+                
+                // Update the marker popup
+                marker.setPopupContent(
+                  `<b>${info.buyer_name}</b><br/>Order: ${item.order_number}<br/>Address: ${info.address}`
+                );
+                
+                // Also update the order object if it exists
+                const orderToUpdate = orders.value.find(o => o.order_id === item.order_id);
+                if (orderToUpdate) {
+                  orderToUpdate.address = address;
+                }
+              }
+            });
+
+            marker.bindPopup(
+              `<b>${info.buyer_name}</b><br/>Order: ${item.order_number}<br/>Address: ${info.address}`
+            );
+            allMarkers.push({ 
+              marker, 
+              buyer_name: info.buyer_name.toLowerCase(),
+              order_id: item.order_id
+            });
+          }
         });
       }
+
+      // if (dataToUse && dataToUse.length) {
+      //   dataToUse.forEach(item => {
+      //     const info = orderInfoMap[item.order_id] || { address: '-', buyer_name: '-' };
+      //     const marker = L.marker([item.latitude, item.longitude]);
+      //     marker.addTo(markersLayer);
+
+      //     // Lazy load address on popup open
+      //     marker.on('popupopen', async () => {
+      //       if (info.address === '-' && item.latitude && item.longitude) {
+      //         const address = await reverseGeocode(item.latitude, item.longitude);
+      //         info.address = address;
+      //         marker.setPopupContent(
+      //           `<b>${info.buyer_name}</b><br/>Order: ${item.order_number}<br/>Address: ${info.address}`
+      //         );
+      //       }
+      //     });
+
+      //     marker.bindPopup(
+      //       `<b>${info.buyer_name}</b><br/>Order: ${item.order_number}<br/>Address: ${info.address}`
+      //     );
+      //     allMarkers.push({ marker, buyer_name: info.buyer_name.toLowerCase() });
+      //   });
+      // }
     };
+
+    const filterMarkersByName = (searchTerm) => {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      markersLayer.clearLayers();
+      allMarkers.forEach(({ marker, buyer_name }) => {
+        if (buyer_name.includes(lowerSearchTerm)) {
+          marker.addTo(markersLayer);
+        }
+      });
+    };
+
+    const searchQuery = ref('');
 
     onMounted(() => {
       fetchDashboardData();
@@ -311,6 +549,11 @@ export default {
       formattedProfit,
       currentMonth,
       showWelcomeModal,
+      searchQuery,
+      filterMarkersByName,
+      updateMap,
+      truncateAddress,
+      focusOnMarker,
     };
   }
 };

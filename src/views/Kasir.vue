@@ -3,7 +3,7 @@
     <div class="p-6 h-[calc(100vh-3rem)] overflow-hidden">
       <div class="flex h-full">
         <!-- LEFT: Product List -->
-        <div class="w-2/3 pr-4 overflow-y-auto hide-scrollbar">
+        <div class="w-2/3 pr-4 overflow-y-auto">
           <!-- Filter & Search -->
           <div class="flex items-center justify-between mb-4 gap-4">
             <select class="border border-[#1A327B] text-black font-semibold px-3 py-2 rounded-lg w-1/4">
@@ -39,8 +39,8 @@
 
           
         </div>
-<!---RIGHT SECTION-->
-        <!-- Cart -->
+
+        <!-- RIGHT: Cart / Payment Summary -->
         <div class="w-1/3 bg-white p-4 rounded-xl shadow border border-[#1A327B] flex flex-col h-full">
           <template v-if="!isPaying">
             <h2 class="font-bold text-lg flex items-center text-black border-b pb-2 mb-4">
@@ -203,10 +203,7 @@
 import AppLayout from "@/components/Layout.vue";
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useCheckoutStore } from './Checkout.js';
 import axios from "axios";
-import { storeToRefs } from 'pinia';
-
 
 
 export default {
@@ -225,16 +222,6 @@ export default {
     const receivedCash = ref(0);
 
     const products = ref([]);
-    const buyerName = ref("");
-    const phoneNumber = ref("");
-    const latitude = ref(null);
-    const longitude = ref(null);
-    const cart = ref([]);
-
-
-    const checkout = useCheckoutStore();
-    const { isPaying, deliveryMethod, selectedAddress } = storeToRefs(checkout);
-
 
     const fetchProducts = async () => {
       try {
@@ -246,16 +233,18 @@ export default {
 
         console.log("Full API response:", response);
 
-        products.value = response.data.data.map((item) => ({
-          id: item.product_id,
-          name: item.product_name,
-          image: item.image,
-          price: parseFloat(item.price),
-        }));
-      } catch (error) {
-        console.error(error);
-      }
-    };
+
+    // Map the API response to match frontend usage
+    products.value = response.data.data.map((item) => ({
+      id: item.product_id,
+      name: item.product_name,
+      image: item.image,
+      price: parseFloat(item.price),
+    }));
+  } catch (error) {
+    console.error(error);
+  }
+};
 
     onMounted(() => {
       fetchProducts();
@@ -364,22 +353,19 @@ const handleDeliveryChange = () => {
           }
         });
 
-    console.log('Order created:', response.data);
+        console.log('Order created:', response.data);
+        checkout.cart = [];
 
-    cart.value = [];
-
-    if (selectedPaymentMethod.value === "cash") {
-      showCashPopup.value = true;
-    } else {
-      showQRPopup.value = true;
-    }
-
-  } catch (err) {
-    console.error('Failed to create order:', err.response?.data || err);
-    alert("Gagal menyimpan pesanan. Pastikan semua field sudah diisi dengan benar.");
-  }
-};
-
+        if (selectedPaymentMethod.value === "cash") {
+          showCashPopup.value = true;
+        } else {
+          showQRPopup.value = true;
+        }
+      } catch (err) {
+        console.error('Failed to create order:', err.response?.data || err);
+        alert("Gagal menyimpan pesanan. Pastikan semua field sudah diisi dengan benar.");
+      }
+    };
 
     const finishCashPayment = () => {
       showCashPopup.value = false;
