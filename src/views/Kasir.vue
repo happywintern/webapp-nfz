@@ -204,6 +204,10 @@ import AppLayout from "@/components/Layout.vue";
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
+import { useCheckoutStore } from './checkout.js';
+import { storeToRefs } from 'pinia';
+
+
 
 
 export default {

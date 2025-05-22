@@ -338,7 +338,6 @@ export default {
       pageSize,
       goToPreviousPage,
       goToNextPage,
-      totalRevenue,
       viewTransaction,
       isSidebarOpen,
       activeMenu,
