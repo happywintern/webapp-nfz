@@ -1,11 +1,9 @@
 <template>
   <div class="flex items-center justify-center min-h-screen bg-gray-100">
     <div class="flex bg-white rounded-2xl shadow-lg overflow-hidden max-w-4xl w-full">
-      <!-- Left: Form -->
       <div class="w-full md:w-1/2 p-10">
         <div class="flex justify-center mb-4">
           <div class="bg-[#1A327B] bg-opacity-10 text-[#1A327B] p-4 rounded-full">
-            <!-- Ganti ikon jadi user login -->
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2"
               viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -42,10 +40,12 @@
           >
             Login
           </button>
+          <p class="mt-4 text-center text-sm text-blue-600 cursor-pointer hover:underline" @click="$router.push('/forgot-password')">
+            Forgot Password?
+          </p>
         </form>
       </div>
 
-      <!-- Right: Image -->
       <div class="hidden md:block md:w-1/2 bg-gray-50 flex items-center justify-center">
         <img :src="require('@/assets/frozen-food.jpg')" alt="Logo" class="h-full w-full object-cover rounded-r-xl" />
 
@@ -104,8 +104,9 @@ export default {
           const user = response.data.data.user;
 
   // Store token and user info
-  localStorage.setItem("token", token);
-  localStorage.setItem("user_id", user.user_id); // 👈 Save user_id
+          localStorage.setItem("token", token);
+          localStorage.setItem("user_id", user.user_id); // 👈 Save user_id
+          localStorage.setItem("username", user.nama || user.name || ""); // 👈 Save username from user object
           this.$router.push("/dashboard");
         } else {
           alert("Login succeeded but no token received.");

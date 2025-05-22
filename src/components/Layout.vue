@@ -1,13 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-100 flex">
-    <!-- Sidebar -->
+
     <div
       class="bg-white min-h-screen shadow-lg border-r transition-all duration-300 ease-in-out flex flex-col justify-between"
       :class="isSidebarOpen ? 'w-64' : 'w-20'"
     >
       <ul class="mt-4 space-y-1">
         <li v-for="item in menuItems" :key="item.name">
-          <!-- Logout button -->
           <button
             v-if="item.logout"
             @click="logout"
@@ -20,7 +19,6 @@
             </transition>
           </button>
 
-          <!-- Link items -->
           <router-link
             v-else
             :to="item.link"
@@ -57,6 +55,9 @@
             </svg>
           </button>
           <img :src="logo" alt="Logo" :class="[isSidebarOpen ? 'h-10 ml-4' : 'h-10 ml-2']">
+        </div>
+        <div class="text-gray-700 font-semibold">
+          {{ username }}
         </div>
       </nav>
 
@@ -113,19 +114,24 @@ export default {
       });
     };
 
+    const username = ref(localStorage.getItem('username') || '');
+
     return {
       isSidebarOpen,
       toggleSidebar,
       activeMenu,
       menuItems,
       logo,
-      logout
+      logout,
+      username
     };
   },
 };
 </script>
 
 <style scoped>
+@import '@/assets/css/hide-scrollbar.css';
+
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s ease;
 }

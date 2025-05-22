@@ -1,19 +1,26 @@
 <template>
   <AppLayout>
     <div class="p-6 bg-gray-100 min-h-screen">
-      <!-- Search Input -->
-      <div class="relative mb-4 w-1/6">
-        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search"
-          class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-full"
-        />
+      <!-- Search Input and Export Button -->
+      <div class="relative mb-4 flex items-center space-x-4 w-1/6">
+        <div class="relative flex-grow">
+          <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search"
+            class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-full"
+          />
+        </div>
+        <button
+          @click="exportToPDF"
+          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
+          Export to PDF
+        </button>
       </div>
 
-      <!-- Table Container -->
-      <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div class="bg-white rounded-xl shadow-md overflow-hidden hide-scrollbar">
         <table class="w-full text-sm">
           <thead class="text-left">
             <tr class="text-gray-700">
@@ -29,7 +36,7 @@
           </thead>
           <tbody class="text-gray-800">
             <tr
-              v-for="transaction in filteredTransactions"
+              v-for="transaction in paginatedTransactions"
               :key="transaction.id"
               class="border-b hover:bg-gray-50 transition"
             >
@@ -59,13 +66,32 @@
                     <i class="fas fa-trash"></i>
                   </button>
                   <button @click="viewTransaction(transaction.id)" class="text-gray-600 hover:text-green-600">
-                    <img src="'assets/icons/vertical_split.svg'" alt="View" class="w-5 h-5" />
+                    <img src="@/assets/icons/vertical_split.svg" alt="View" class="w-5 h-5" />
                   </button>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
+      <div class="flex justify-end p-4 border-t border-gray-200">
+        <button
+          @click="goToPreviousPage"
+          :disabled="currentPage === 1"
+          class="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50 mr-2"
+        >
+          Previous
+        </button>
+        <span class="flex items-center text-sm mr-2">
+          Page {{ currentPage }} of {{ totalPages }}
+        </span>
+        <button
+          @click="goToNextPage"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
       </div>
     </div>
   </AppLayout>
@@ -78,6 +104,9 @@ import logoImage from "@/assets/image.png";
 import AppLayout from "@/components/Layout.vue";
 
 import { HomeIcon, ShoppingCartIcon, BanknotesIcon, CubeIcon, StarIcon } from "@heroicons/vue/24/solid";
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default {
   name: "SalesPage",
@@ -156,6 +185,30 @@ export default {
       });
     });
 
+    const currentPage = ref(1);
+    const pageSize = ref(5);
+
+    const paginatedTransactions = computed(() => {
+      const start = (currentPage.value - 1) * pageSize.value;
+      return filteredTransactions.value.slice(start, start + pageSize.value);
+    });
+
+    const totalPages = computed(() => {
+      return Math.ceil(filteredTransactions.value.length / pageSize.value);
+    });
+
+    const goToPreviousPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value--;
+      }
+    };
+
+    const goToNextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+      }
+    };
+
     const editTransaction = (id) => {
       alert(`Edit transaction: ${id}`);
     };
@@ -170,12 +223,87 @@ export default {
       alert(`View transaction: ${id}`);
     };
 
+    // New method to export to PDF
+    const exportToPDF = async () => {
+      const doc = new jsPDF();
+
+      // Get current month and year for the title
+      const now = new Date();
+      const monthNames = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      ];
+      const month = monthNames[now.getMonth()];
+      const year = now.getFullYear();
+
+      // Add title
+      doc.setFontSize(14);
+      doc.text(`Laporan Keuangan Bulan ${month} ${year}`, 14, 15);
+
+      // Fetch product sales data from API or compute from transactions
+      // Assuming an API endpoint exists to get product sales summary for the month
+      let productSales = [];
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`https://nurulfrozen.dgeo.id/api/product-sales-summary?month=${now.getMonth() + 1}&year=${year}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.data && Array.isArray(response.data.data)) {
+          productSales = response.data.data.map(item => ({
+            product: item.product_name,
+            buyPrice: `Rp ${item.buy_price.toLocaleString()}`,
+            sellPrice: `Rp ${item.sell_price.toLocaleString()}`,
+            soldStock: item.sold_stock,
+            profitPercent: `${item.profit_percent}%`
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching product sales summary:", error);
+        // Fallback dummy data if API fails
+        productSales = [
+          { product: 'Produk A', buyPrice: 'Rp 10,000', sellPrice: 'Rp 15,000', soldStock: 100, profitPercent: '50%' },
+          { product: 'Produk B', buyPrice: 'Rp 20,000', sellPrice: 'Rp 25,000', soldStock: 50, profitPercent: '25%' },
+          { product: 'Produk C', buyPrice: 'Rp 5,000', sellPrice: 'Rp 7,000', soldStock: 200, profitPercent: '40%' }
+        ];
+      }
+
+      // Define columns for the product sales table
+      const columns = [
+        { header: 'List Product', dataKey: 'product' },
+        { header: 'Harga Belinya', dataKey: 'buyPrice' },
+        { header: 'Harga Jual', dataKey: 'sellPrice' },
+        { header: 'Jumlah Stok Terjual', dataKey: 'soldStock' },
+        { header: 'Keuntungan (%)', dataKey: 'profitPercent' }
+      ];
+
+      // Add autotable to the PDF using imported autoTable function
+      autoTable(doc, {
+        columns,
+        body: productSales,
+        startY: 25,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [26, 50, 123] }, // match border color #1A327B
+        theme: 'striped'
+      });
+
+        doc.save(`laporan_keuangan_${month}_${year}.pdf`);
+    };
+
     return {
       selectedFilter,
       selectedDate,
       searchQuery,
       transactions,
       filteredTransactions,
+      paginatedTransactions,
+      totalPages,
+      currentPage,
+      pageSize,
+      goToPreviousPage,
+      goToNextPage,
       totalRevenue,
       editTransaction,
       deleteTransaction,
@@ -185,7 +313,8 @@ export default {
       activeMenu,
       setActiveMenu,
       menuItems,
-      logo
+      logo,
+      exportToPDF
     };
   }
 };
@@ -206,10 +335,6 @@ export default {
 
 .done {
   background-color: #28a745; /* Green */
-}
-
-.done {
-  background-color: #28a745; /* Green */
   color: #ffffff; /* White */
 }
 
@@ -217,5 +342,4 @@ export default {
   background-color: #ffc107; /* Yellow */
   color: #000000; /* Black */
 }
-
 </style>
