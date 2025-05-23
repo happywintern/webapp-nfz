@@ -95,7 +95,7 @@
 			class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
 		>
 			<div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-				<h2 class="text-lg font-semibold mb-4 text-[#1A327B]">Edit Supplier</h2>
+				<h2 class="text-lg font-semibold mb-4 text-[#1A327B]">Edit Stok</h2>
 
 				<div class="space-y-4">
 					<div>

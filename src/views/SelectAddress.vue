@@ -1,19 +1,37 @@
 <template>
 	<AppLayout>
+		<div class="flex items-center gap-x-2 mb-2">
+			<button
+				@click="goBack"
+				class="text-gray-600 hover:text-blue-700 p-1"
+				title="Kembali"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M15 19l-7-7 7-7"
+					/>
+				</svg>
+			</button>
+			<h2 class="text-lg font-semibold">Kembali</h2>
+		</div>
 		<div class="min-h-screen bg-gray-100 flex">
 			<div class="flex-1 flex p-6">
-				<button
-					@click="goBack"
-					class="absolute top-4 left-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded shadow z-50"
-				>
-					Back
-				</button>
 				<!-- Left Side: Map -->
 				<div
 					class="w-2/3 pr-4"
 					v-if="!addressConfirmed"
 				>
-					<h2 class="text-lg font-semibold mb-2">Pilih Lokasi Antar</h2>
+					<!-- Tombol Back -->
+
 					<l-map
 						ref="map"
 						v-model:zoom="zoom"
