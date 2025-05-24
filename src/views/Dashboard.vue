@@ -70,7 +70,9 @@
           <h2 class="text-xl font-bold text-blue-900 border-b pb-2 mb-4 text-center">
             Penjualan Bulan - {{ currentMonth }}
           </h2>
-          <canvas id="salesChart" class="w-full h-64"></canvas>
+          <div class="h-48">
+            <canvas id="salesChart"></canvas>
+          </div>
         </div>
       </div>
 
@@ -282,68 +284,72 @@ export default {
             'Content-Type': 'application/json'
           }
         });
-        const data = response.data;
-        totalSales.value = data.total_sales;
-        transactionCount.value = data.transaction_count;
-        productSalesTotal.value = data.product_sales.reduce((acc, item) => acc + Number(item.total_sold || 0), 0);
-        profit.value = data.profit;
-        chartData.value = data.chart_data;
 
-        // Merge orders_in_progress and map_data by order_id to add latitude, longitude
-        const mapDataByOrderId = {};
-        if (data.map_data && Array.isArray(data.map_data)) {
-          data.map_data.forEach(item => {
-            if (item.order_id) {
-              mapDataByOrderId[item.order_id] = item;
-            }
-          });
+        if (!response.data?.data) {
+          throw new Error('Invalid response format');
         }
-        // data.map_data.forEach(item => {
-        //   mapDataByOrderId[item.order_id] = item;
-        // });
 
-        // For each order, add latitude, longitude, but skip address fetching here for performance
-        const ordersWithLocation = data.orders_in_progress.map(order => {
+        const data = response.data.data;
+
+        // Set basic statistics
+        totalSales.value = parseFloat(data.total_sales || 0);
+        transactionCount.value = parseInt(data.transaction_count || 0);
+        profit.value = parseFloat(data.profit || 0);
+
+        // Handle product sales
+        if (Array.isArray(data.product_sales)) {
+          productSalesTotal.value = data.product_sales.reduce((acc, item) => 
+            acc + parseInt(item.total_sold || 0), 0);
+        } else {
+          productSalesTotal.value = 0;
+        }
+
+        // Handle chart data
+        chartData.value = Array.isArray(data.chart_data) ? data.chart_data : [];
+
+        // Handle orders and map data
+        const ordersInProgress = data.orders_in_progress || [];
+        const mapDataArray = data.map_data || [];
+
+        // Create map data lookup
+        const mapDataByOrderId = {};
+        mapDataArray.forEach(item => {
+          if (item?.order_id) {
+            mapDataByOrderId[item.order_id] = item;
+          }
+        });
+
+        // Process orders with location data
+        orders.value = ordersInProgress.map(order => {
           const mapItem = mapDataByOrderId[order.order_id];
-          
           return {
             ...order,
             latitude: mapItem?.latitude || null,
             longitude: mapItem?.longitude || null,
-            address: 'Loading...', 
-            buyer_name: mapItem?.recipient_name || 'Customer #' + order.order_id
+            address: 'Loading...',
+            buyer_name: mapItem?.recipient_name || `Customer #${order.order_number}`
           };
         });
-        // const ordersWithLocation = data.orders_in_progress.map(order => {
-        //   const mapItem = mapDataByOrderId[order.order_id];
-        //   if (mapItem && mapItem.latitude && mapItem.longitude) {
-        //     return {
-        //       ...order,
-        //       latitude: mapItem.latitude,
-        //       longitude: mapItem.longitude,
-        //       address: '-', // placeholder, will fetch on marker click
-        //       buyer_name: mapItem.recipient_name || '-'
-        //     };
-        //   } else {
-        //     return {
-        //       ...order,
-        //       latitude: null,
-        //       longitude: null,
-        //       address: '-',
-        //       buyer_name: '-'
-        //     };
-        //   }
-        // });
 
-        orders.value = ordersWithLocation;
-        mapData.value = data.map_data || [];
+        mapData.value = mapDataArray;
 
+        // Update visualizations
         updateChart();
         updateMap();
-
+        
+        // Fetch addresses in background
         fetchAddressesForOrders();
+
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
+        // Set default values on error
+        totalSales.value = 0;
+        transactionCount.value = 0;
+        productSalesTotal.value = 0;
+        profit.value = 0;
+        chartData.value = [];
+        orders.value = [];
+        mapData.value = [];
       }
     };
     
@@ -393,29 +399,96 @@ export default {
     };
 
     const updateChart = () => {
-      const ctx = document.getElementById("salesChart").getContext("2d");
-      const labels = chartData.value.map(item => item.date) || [];
-      const dataSet = chartData.value.map(item => item.daily_total) || [];
+      const canvas = document.getElementById("salesChart");
+      if (!canvas) {
+        console.warn("Sales chart canvas not found");
+        return;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        console.warn("Could not get 2D context for sales chart");
+        return;
+      }
+
+      // Urutkan data berdasarkan tanggal
+      const sortedData = chartData.value
+        .map(item => ({
+          date: new Date(item.date),
+          value: parseFloat(item.daily_total || 0)
+        }))
+        .sort((a, b) => a.date - b.date);
+
+      const dataSet = sortedData.map(item => item.value);
+      const sortedLabels = sortedData.map(item => item.date.getDate());
+
+      // Get the chart instance from the canvas
+      const existingChart = Chart.getChart(canvas);
+      if (existingChart) {
+        existingChart.destroy();
+      }
+
+      // Create new chart
       new Chart(ctx, {
         type: "bar",
         data: {
-          labels,
-          datasets: [
-            {
-              label: "Sales",
-              data: dataSet,
-              backgroundColor: "#1e3a8a",
-              borderRadius: 8,
-              barThickness: 40,
-            },
-          ],
+          labels: sortedLabels,
+          datasets: [{
+            label: "Penjualan",
+            data: dataSet,
+            backgroundColor: "#1e3a8a",
+            borderRadius: 8,
+            barThickness: 20, // Mengecilkan ketebalan bar
+          }],
         },
         options: {
-          scales: { 
-            y: { beginAtZero: true, ticks: { stepSize: 20 } }
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                  }).format(value);
+                }
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Tanggal'
+              }
+            }
           },
-          plugins: { legend: { display: false } },
-        },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: function(context) {
+                  const date = new Date(chartData.value[context[0].dataIndex].date);
+                  return date.toLocaleDateString('id-ID', { 
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                  });
+                },
+                label: function(context) {
+                  return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                  }).format(context.raw);
+                }
+              }
+            }
+          }
+        }
       });
     };
 

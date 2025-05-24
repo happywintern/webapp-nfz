@@ -3,16 +3,15 @@
     <div class="p-6 bg-gray-100 min-h-screen">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
         <!-- Search Input -->
-        <div class="relative w-full sm:w-48">
-          <i class="fas fa-search absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm"></i>
-          <input
-            type="text"
-            placeholder="Search"
-            v-model="searchQuery"
-            class="pl-8 pr-3 py-1.5 border border-[#1A327B] text-black font-semibold rounded-lg w-full text-sm"
-          />
-        </div>
-
+				<div class="relative w-full sm:w-48">
+						<i class="fas fa-search absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+						<input
+						type="text"
+						placeholder="Search"
+						v-model="searchQuery"
+						class="pl-10 pr-4 py-2 border border-[#1A327B] text-black font-semibold rounded-lg w-40"
+						/>
+				</div>
         <!-- Tambah Button -->
         <button
           @click="showAddModal = true"
@@ -29,11 +28,11 @@
           <thead class="text-gray-700 mt-4">
             <tr>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">No.</th>
-              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Name</th>
+              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Nama</th>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Role</th>
               <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Email</th>
-              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Phone</th>
-              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Action</th>
+              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Nomor Telepon</th>
+              <th class="py-4 px-6 font-semibold border-b-2 border-[#1A327B]">Aksi</th>
             </tr>
           </thead>
           <tbody class="text-gray-800">
@@ -111,7 +110,7 @@
           </div>
           <div>
             <label class="block text-sm font-semibold">Phone Number</label>
-            <input type="email" v-model="newStaff.phone" class="w-full px-4 py-2 border rounded" />
+            <input type="tel" v-model="newStaff.phone" class="w-full px-4 py-2 border rounded" placeholder="081234567890" />
           </div>
           <div>
             <label class="block text-sm font-semibold">Password</label>
@@ -244,7 +243,9 @@ export default {
         return 'bg-gray-600';
       }
     },
+    
     async fetchStaff() {
+      
       try {
         const token = localStorage.getItem('token');
 
@@ -349,7 +350,11 @@ export default {
         this.showNotification("Semua field harus diisi.", 'error');
         return;
       }
-
+      
+      if (!this.newStaff.phone || !/^08[0-9]{8,12}$/.test(this.newStaff.phone)) {
+        this.showNotification("Nomor HP wajib diisi, minimal 10 digit dan awali 08.", 'error');
+        return;
+      }
       const token = localStorage.getItem('token');
       if (!token) {
         this.showNotification('No token found, please login first.', 'error');
@@ -385,7 +390,10 @@ export default {
         this.showNotification("Semua field harus diisi.", 'error');
         return;
       }
-
+      if (!this.newStaff.phone || !/^08[0-9]{8,12}$/.test(this.newStaff.phone)) {
+        this.showNotification("Nomor HP wajib diisi, minimal 10 digit dan awali 08.", 'error');
+        return;
+      }
       const token = localStorage.getItem('token');
       if (!token) {
         this.showNotification('No token found, please login first.', 'error');

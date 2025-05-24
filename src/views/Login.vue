@@ -17,32 +17,65 @@
 
         <form @submit.prevent="login">
           <div class="mb-4">
-            <input
-              v-model="email"
-              type="text"
-              placeholder="Masukan Email Anda"
-              class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1A327B]"
-              required
-            />
+            <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+            <div class="relative">
+              <input
+                v-model="email"
+                type="text"
+                placeholder="Masukan Email Anda"
+                class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1A327B] pl-10"
+                required
+              />
+              <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <i class="fas fa-envelope"></i>
+              </span>
+            </div>
           </div>
           <div class="mb-4">
-            <input
-              v-model="password"
-              type="password"
-              placeholder="Password"
-              class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1A327B]"
-              required
-            />
+            <label class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+            <div class="relative">
+              <input
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                placeholder="Password"
+                class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1A327B] pl-10"
+                required
+              />
+              <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <i class="fas fa-lock"></i>
+              </span>
+              <button 
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+              </button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mb-6">
+            <label class="flex items-center">
+              <input 
+                type="checkbox" 
+                v-model="rememberMe"
+                class="form-checkbox h-4 w-4 text-[#1A327B] rounded border-gray-300 focus:ring-[#1A327B]"
+              />
+              <span class="ml-2 text-sm text-gray-600">Remember me</span>
+            </label>
+            <p 
+              class="text-sm text-[#1A327B] hover:text-blue-800 cursor-pointer" 
+              @click="$router.push('/forgot-password')"
+            >
+              Forgot Password?
+            </p>
           </div>
           <button
             type="submit"
-            class="w-full bg-[#1A327B] text-white p-3 rounded-xl hover:bg-opacity-90 transition duration-300"
+            class="w-full bg-[#1A327B] text-white p-3 rounded-xl hover:bg-opacity-90 transition duration-300 flex items-center justify-center space-x-2"
           >
-            Login
+            <i class="fas fa-sign-in-alt"></i>
+            <span>Login</span>
           </button>
-          <p class="mt-4 text-center text-sm text-blue-600 cursor-pointer hover:underline" @click="$router.push('/forgot-password')">
-            Forgot Password?
-          </p>
         </form>
       </div>
 
@@ -65,7 +98,18 @@ export default {
     return {
       email: "",
       password: "",
+      showPassword: false,
+      rememberMe: false
     };
+  },
+
+  mounted() {
+    // Check if there are saved credentials
+    const savedEmail = localStorage.getItem('savedEmail');
+    if (savedEmail) {
+      this.email = savedEmail;
+      this.rememberMe = true;
+    }
   },
 
   methods: {
@@ -84,14 +128,12 @@ export default {
         const response = await axios.post(
           'https://nurulfrozen.dgeo.id/api/login',           
           {
-        email: this.email,
-        password: this.password
-      },
-
+            email: this.email,
+            password: this.password
+          },
           {
             headers: {
               "Content-Type": "application/json",
-              // Optional: Add Accept header if your backend expects it
               "Accept": "application/json",
             },
           }
@@ -103,11 +145,25 @@ export default {
           const token = response.data.data.access_token;
           const user = response.data.data.user;
 
-  // Store token and user info
+          // Store token and user info
           localStorage.setItem("token", token);
-          localStorage.setItem("user_id", user.user_id); // 👈 Save user_id
-          localStorage.setItem("username", user.nama || user.name || ""); // 👈 Save username from user object
-          this.$router.push("/dashboard");
+          localStorage.setItem("user_id", user.user_id);
+          localStorage.setItem("username", user.nama || user.name || "");
+          localStorage.setItem("role", user.role?.toLowerCase() || "");
+
+          // Save email if remember me is checked
+          if (this.rememberMe) {
+            localStorage.setItem('savedEmail', this.email);
+          } else {
+            localStorage.removeItem('savedEmail');
+          }
+
+          // Redirect based on role
+          if (user.role?.toLowerCase() === 'cashier') {
+            this.$router.push("/kasir");
+          } else {
+            this.$router.push("/dashboard");
+          }
         } else {
           alert("Login succeeded but no token received.");
         }
@@ -115,10 +171,7 @@ export default {
         console.error("Login failed:", error);
 
         if (error.response) {
-          // Log backend message (if any)
           console.error("Server response:", error.response.data);
-
-          // Show exact message from backend if available
           alert(error.response?.data.message || "Invalid credentials.");
         } else {
           alert("Unable to connect to server.");
@@ -154,3 +207,39 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+.form-checkbox {
+  appearance: none;
+  padding: 0;
+  print-color-adjust: exact;
+  display: inline-block;
+  vertical-align: middle;
+  background-origin: border-box;
+  user-select: none;
+  flex-shrink: 0;
+  height: 1rem;
+  width: 1rem;
+  color: #1A327B;
+  background-color: #fff;
+  border-color: #d1d5db;
+  border-width: 1px;
+  border-radius: 0.25rem;
+}
+
+.form-checkbox:checked {
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+  border-color: transparent;
+  background-color: currentColor;
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.form-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(26, 50, 123, 0.25);
+}
+</style>
