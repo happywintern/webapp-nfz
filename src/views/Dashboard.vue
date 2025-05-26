@@ -156,7 +156,7 @@
             </div>
           </div>
           <!-- Kanan: Peta Dinamis -->
-          <div id="map" class="w-full h-64 mt-0 md:mt-0 relative"></div>
+          <div id="map" class="w-full h-[400px] mt-0 md:mt-0 relative rounded-xl overflow-hidden"></div>
         </div>
       </div>
     </div>
@@ -185,6 +185,8 @@ import L from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import 'leaflet-routing-machine';
+import { ChartBarIcon, ArrowUturnLeftIcon, ShoppingBagIcon, PresentationChartLineIcon } from "@heroicons/vue/24/solid";
 
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -193,7 +195,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
 });
-import { ChartBarIcon, ArrowUturnLeftIcon, ShoppingBagIcon, PresentationChartLineIcon } from "@heroicons/vue/24/solid";
 
 export default {
   name: "DashboardPage",
@@ -360,22 +361,174 @@ export default {
       return address.substring(0, 30) + '...';
     };
 
-    // Function to focus on a marker when an address is clicked
+    // Store location constants
+    const STORE_LOCATION = {
+      lat: -6.44813179975753,
+      lng: 106.81008755652336,
+      address: "Jl. Kp. Utan Jaya No.Rt05 Rw 04, Pd. Jaya, Kec. Cipayung, Kota Depok, Jawa Barat 16920"
+    };
+
+    let mapInstance = null;
+    let routingControl = null;
+    let markersLayer = null;
+    let allMarkers = [];
+
+    // Custom store icon
+    const storeIcon = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    const updateMap = (filteredMapData = null) => {
+      if (mapInstance) {
+        mapInstance.remove();
+      }
+
+      // Initialize map centered at store location
+      mapInstance = L.map("map", {
+        zoomControl: true,
+        scrollWheelZoom: true
+      }).setView([STORE_LOCATION.lat, STORE_LOCATION.lng], 13);
+      
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(mapInstance);
+
+      // Add store marker with custom icon
+      L.marker([STORE_LOCATION.lat, STORE_LOCATION.lng], { 
+        icon: storeIcon,
+        title: 'Nurul Frozen (Toko)'
+      })
+        .addTo(mapInstance)
+        .bindPopup("<b>Nurul Frozen</b><br>" + STORE_LOCATION.address);
+
+      if (markersLayer) {
+        markersLayer.clearLayers();
+      } else {
+        markersLayer = L.layerGroup().addTo(mapInstance);
+      }
+
+      // Create a map from order_id to order info (address and buyer_name)
+      const orderInfoMap = {};
+      orders.value.forEach(order => {
+        orderInfoMap[order.order_id] = {
+          address: order.address || '-',
+          buyer_name: order.buyer_name || '-'
+        };
+      });
+
+      const dataToUse = filteredMapData || mapData.value;
+
+      allMarkers = [];
+
+      if (dataToUse && dataToUse.length) {
+        dataToUse.forEach(item => {
+          if (item.latitude && item.longitude) {
+            const info = orderInfoMap[item.order_id] || { address: '-', buyer_name: '-' };
+            const marker = L.marker([item.latitude, item.longitude], {
+              title: info.buyer_name
+            });
+            marker.orderId = item.order_id;
+            marker.addTo(markersLayer);
+
+            // Lazy load address on popup open
+            marker.on('popupopen', async () => {
+              if (info.address === '-' || info.address === 'Loading...') {
+                const address = await reverseGeocode(item.latitude, item.longitude);
+                info.address = address;
+                
+                marker.setPopupContent(
+                  `<b>${info.buyer_name}</b><br/>Order: ${item.order_number}<br/>Address: ${info.address}`
+                );
+                
+                const orderToUpdate = orders.value.find(o => o.order_id === item.order_id);
+                if (orderToUpdate) {
+                  orderToUpdate.address = address;
+                }
+              }
+            });
+
+            marker.bindPopup(
+              `<b>${info.buyer_name}</b><br/>Order: ${item.order_number}<br/>Address: ${info.address}`
+            );
+            allMarkers.push({ 
+              marker, 
+              buyer_name: info.buyer_name.toLowerCase(),
+              order_id: item.order_id
+            });
+          }
+        });
+      }
+    };
+
+    const createRoute = (customerLat, customerLng, selectedOrderId) => {
+      // Hide all markers first
+      allMarkers.forEach(({ marker }) => {
+        markersLayer.removeLayer(marker);
+      });
+
+      // Show only the selected customer marker
+      const selectedMarker = allMarkers.find(m => m.order_id === selectedOrderId);
+      if (selectedMarker) {
+        selectedMarker.marker.addTo(markersLayer);
+      }
+
+      if (routingControl) {
+        mapInstance.removeControl(routingControl);
+      }
+
+      routingControl = L.Routing.control({
+        waypoints: [
+          L.latLng(STORE_LOCATION.lat, STORE_LOCATION.lng),
+          L.latLng(customerLat, customerLng)
+        ],
+        routeWhileDragging: false,
+        addWaypoints: false,
+        draggableWaypoints: false,
+        fitSelectedRoutes: true,
+        showAlternatives: false,
+        lineOptions: {
+          styles: [{ color: '#1A327B', weight: 4 }]
+        },
+        containerClassName: 'custom-routing-container',
+        createMarker: function(i, wp) {
+          if (i === 0) {
+            // Store marker (red)
+            return L.marker(wp.latLng, { 
+              icon: storeIcon,
+              title: 'Nurul Frozen (Toko)'
+            });
+          }
+          // Customer marker (blue - default)
+          return L.marker(wp.latLng, {
+            title: 'Lokasi Customer'
+          });
+        }
+      }).addTo(mapInstance);
+
+      const bounds = L.latLngBounds([
+        [STORE_LOCATION.lat, STORE_LOCATION.lng],
+        [customerLat, customerLng]
+      ]);
+      mapInstance.fitBounds(bounds, { padding: [70, 70] });
+    };
+
     const focusOnMarker = (order) => {
       if (!order.latitude || !order.longitude) return;
       
-      // Find the corresponding marker
-      const markerItem = allMarkers.find(marker => {
-        const markerLatLng = marker.marker.getLatLng();
-        return markerLatLng.lat === parseFloat(order.latitude) && 
-              markerLatLng.lng === parseFloat(order.longitude);
-      });
+      const customerLat = parseFloat(order.latitude);
+      const customerLng = parseFloat(order.longitude);
       
+      // Create route from store to customer and show only selected marker
+      createRoute(customerLat, customerLng, order.order_id);
+
+      // Open the popup for this marker
+      const markerItem = allMarkers.find(marker => marker.order_id === order.order_id);
       if (markerItem) {
-        // Center the map on the marker location
-        mapInstance.setView([order.latitude, order.longitude], 15);
-        
-        // Open the popup
         markerItem.marker.openPopup();
       }
     };
@@ -492,104 +645,15 @@ export default {
       });
     };
 
-    let mapInstance = null;
-    let markersLayer = null;
-    let allMarkers = [];
-
-    const updateMap = (filteredMapData = null) => {
-      if (mapInstance) {
-        mapInstance.remove();
-      }
-      mapInstance = L.map("map").setView([-6.375, 106.829], 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors",
-      }).addTo(mapInstance);
-
-      if (markersLayer) {
-        markersLayer.clearLayers();
-      } else {
-        markersLayer = L.layerGroup().addTo(mapInstance);
-      }
-
-      // Create a map from order_id to order info (address and buyer_name)
-      const orderInfoMap = {};
-      orders.value.forEach(order => {
-        orderInfoMap[order.order_id] = {
-          address: order.address || '-',
-          buyer_name: order.buyer_name || '-'
-        };
-      });
-
-      const dataToUse = filteredMapData || mapData.value;
-
-      allMarkers = [];
-
-      if (dataToUse && dataToUse.length) {
-        dataToUse.forEach(item => {
-          if (item.latitude && item.longitude) {
-            const info = orderInfoMap[item.order_id] || { address: '-', buyer_name: '-' };
-            const marker = L.marker([item.latitude, item.longitude]);
-            marker.orderId = item.order_id; // Add a reference to the order ID
-            marker.addTo(markersLayer);
-
-            // Lazy load address on popup open
-            marker.on('popupopen', async () => {
-              if (info.address === '-' || info.address === 'Loading...') {
-                const address = await reverseGeocode(item.latitude, item.longitude);
-                info.address = address;
-                
-                // Update the marker popup
-                marker.setPopupContent(
-                  `<b>${info.buyer_name}</b><br/>Order: ${item.order_number}<br/>Address: ${info.address}`
-                );
-                
-                // Also update the order object if it exists
-                const orderToUpdate = orders.value.find(o => o.order_id === item.order_id);
-                if (orderToUpdate) {
-                  orderToUpdate.address = address;
-                }
-              }
-            });
-
-            marker.bindPopup(
-              `<b>${info.buyer_name}</b><br/>Order: ${item.order_number}<br/>Address: ${info.address}`
-            );
-            allMarkers.push({ 
-              marker, 
-              buyer_name: info.buyer_name.toLowerCase(),
-              order_id: item.order_id
-            });
-          }
-        });
-      }
-
-      // if (dataToUse && dataToUse.length) {
-      //   dataToUse.forEach(item => {
-      //     const info = orderInfoMap[item.order_id] || { address: '-', buyer_name: '-' };
-      //     const marker = L.marker([item.latitude, item.longitude]);
-      //     marker.addTo(markersLayer);
-
-      //     // Lazy load address on popup open
-      //     marker.on('popupopen', async () => {
-      //       if (info.address === '-' && item.latitude && item.longitude) {
-      //         const address = await reverseGeocode(item.latitude, item.longitude);
-      //         info.address = address;
-      //         marker.setPopupContent(
-      //           `<b>${info.buyer_name}</b><br/>Order: ${item.order_number}<br/>Address: ${info.address}`
-      //         );
-      //       }
-      //     });
-
-      //     marker.bindPopup(
-      //       `<b>${info.buyer_name}</b><br/>Order: ${item.order_number}<br/>Address: ${info.address}`
-      //     );
-      //     allMarkers.push({ marker, buyer_name: info.buyer_name.toLowerCase() });
-      //   });
-      // }
-    };
-
     const filterMarkersByName = (searchTerm) => {
       const lowerSearchTerm = searchTerm.toLowerCase();
+      
+      // Remove routing if exists when filtering
+      if (routingControl) {
+        mapInstance.removeControl(routingControl);
+      }
+
+      // Show all markers that match the search term
       markersLayer.clearLayers();
       allMarkers.forEach(({ marker, buyer_name }) => {
         if (buyer_name.includes(lowerSearchTerm)) {
@@ -627,6 +691,8 @@ export default {
       updateMap,
       truncateAddress,
       focusOnMarker,
+      mapInstance,
+      STORE_LOCATION
     };
   }
 };
@@ -703,4 +769,7 @@ export default {
   opacity: 1;
   transform: translateX(0);
 }
+
+@import 'leaflet/dist/leaflet.css';
+@import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 </style>

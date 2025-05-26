@@ -104,7 +104,7 @@
 										class="border-b hover:bg-gray-50"
 										:class="{
 											'bg-red-50': item.status === 'expired',
-											'bg-yellow-50': item.status === 'near-expiry'
+											'bg-blue-50': item.status === 'near-expiry'
 										}"
 									>
 										<td class="py-2 px-6">{{ formatDate(item.tanggalMasuk) }}</td>
@@ -677,12 +677,16 @@ export default {
 				);
 
 				console.log("✅ Product updated:", response.data);
-				alert("Produk berhasil diperbarui!");
+				this.showAlert("Produk berhasil diperbarui", "Berhasil", "success");
 				this.showEditModal = false;
 				this.fetchProductData();
 			} catch (error) {
 				console.error("❌ Gagal update produk:", error.response?.data || error);
-				alert("Gagal memperbarui produk. Periksa input dan coba lagi.");
+				this.showAlert(
+					"Gagal memperbarui produk. Periksa input dan coba lagi.",
+					"Error",
+					"error"
+				);
 			}
 		},
 

@@ -510,6 +510,16 @@ export default {
 					return;
 				}
 
+				// Validate image
+				if (!newProduct.value.image) {
+					showAlert({
+						title: "Validasi Error",
+						message: "Foto produk wajib diupload",
+						type: "error"
+					});
+					return;
+				}
+
 				const token = localStorage.getItem("token"); 
 				const formData = new FormData();
 
@@ -519,10 +529,8 @@ export default {
 				formData.append("price", parseFloat(newProduct.value.sellPrice));
 				formData.append("status", "active"); // Add status value
 
-				// Append image if provided
-				if (newProduct.value.image) {
-					formData.append("image", newProduct.value.image); 
-				}
+				// Append image
+				formData.append("image", newProduct.value.image); 
 
 				const response = await axios.post(
 					"https://nurulfrozen.dgeo.id/api/products",
@@ -537,15 +545,12 @@ export default {
 				);
 
 				console.log("✅ Product successfully added:", response.data);
-
-				// Show success message
 				showAlert({
 					title: "Berhasil",
 					message: "Produk berhasil ditambahkan",
 					type: "success"
 				});
 
-				// Update product list or UI state
 				products.value.push({
 					...newProduct.value,
 					id: response.data.data.product_id,

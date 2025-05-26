@@ -864,7 +864,6 @@ export default {
   box-shadow: 0 0 0 3px rgba(26, 50, 123, 0.2);
 }
 
-/* Add styles for the transaction details modal */
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.3s ease;
