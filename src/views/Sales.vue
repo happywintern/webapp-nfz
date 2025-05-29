@@ -418,7 +418,13 @@
           </div>
 
           <!-- Close Button -->
-          <div class="mt-6 flex justify-center">
+          <div class="mt-6 flex justify-center space-x-4">
+            <button 
+              @click="printReceipt" 
+              class="px-6 py-2 bg-[#1A327B] text-white rounded-lg hover:bg-[#152a68]"
+            >
+              Cetak Struk
+            </button>
             <button 
               @click="closeTransactionDetails" 
               class="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
@@ -440,6 +446,7 @@ import AppLayout from "@/components/Layout.vue";
 import { HomeIcon, ShoppingCartIcon, BanknotesIcon, CubeIcon, StarIcon } from "@heroicons/vue/24/solid";
 import { exportToPDF } from "./exporttopdf.js";
 import NotificationToast from "@/components/Toast.vue";
+import { jsPDF } from "jspdf";
 
 export default {
   name: "SalesPage",
@@ -765,6 +772,85 @@ export default {
       await exportToPDF(filters);
     };
 
+    const printReceipt = () => {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [80, 150] // Standard thermal receipt width (80mm)
+      });
+
+      // Set font size and style
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+
+      // Store header
+      doc.text('NURUL FROZEN FOOD', 40, 10, { align: 'center' });
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Jl. Kp. Utan Jaya No.Rt05 Rw 04, Pd. Jaya,', 40, 15, { align: 'center' });
+      doc.text('Kec. Cipayung, Kota Depok, Jawa Barat 16920', 40, 19, { align: 'center' });
+      doc.text('Telp. 0811-3336-422', 40, 23, { align: 'center' });
+      doc.line(5, 25, 75, 25);
+
+      doc.text(`No: ${selectedTransaction.value?.order_number || '-'}`, 5, 30);
+      doc.text(`Kasir: ${selectedTransaction.value?.staff?.name || 'Admin'}`, 5, 34);
+      doc.text(`Tgl: ${formatDateTime(selectedTransaction.value?.created_at)}`, 5, 38);
+
+      doc.line(5, 40, 75, 40);
+
+      let yPos = 44;
+      doc.text('Nama Barang', 5, yPos);
+      doc.text('Qty', 45, yPos);
+      doc.text('Total', 60, yPos);
+      yPos += 4;
+      doc.line(5, yPos, 75, yPos);
+      yPos += 4;
+
+      if (selectedTransaction.value?.items) {
+        selectedTransaction.value.items.forEach(item => {
+          // Item name (with word wrap if needed)
+          const itemName = item.product.product_name;
+          const nameLines = doc.splitTextToSize(itemName, 35);
+          doc.text(nameLines, 5, yPos);
+          
+          // Quantity and total aligned right
+          doc.text(item.quantity.toString(), 47, yPos, { align: 'right' });
+          doc.text(formatRupiah(item.subtotal), 75, yPos, { align: 'right' });
+          
+          yPos += nameLines.length * 4 + 2;
+        });
+      }
+
+      // Final line separator
+      doc.line(5, yPos, 75, yPos);
+      yPos += 4;
+
+      // Totals section
+      doc.text('Total:', 40, yPos);
+      doc.text(`Rp${formatRupiah(selectedTransaction.value?.total_amount || 0)}`, 75, yPos, { align: 'right' });
+      yPos += 4;
+      
+      doc.text(`${selectedTransaction.value?.payment_method || 'Tunai'}:`, 40, yPos);
+      doc.text(`Rp${formatRupiah(selectedTransaction.value?.total_amount || 0)}`, 75, yPos, { align: 'right' });
+      yPos += 4;
+
+      doc.text('Kembali:', 40, yPos);
+      doc.text('Rp0', 75, yPos, { align: 'right' });
+      yPos += 8;
+
+      // Thank you message
+      doc.setFont('helvetica', 'bold');
+      doc.text('Terima Kasih', 40, yPos, { align: 'center' });
+      yPos += 4;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text('Barang yang sudah dibeli tidak dapat ditukar/dikembalikan', 40, yPos, { align: 'center' });
+
+      // Save the PDF with a specific name
+      const fileName = `struk-${selectedTransaction.value?.order_number || 'receipt'}.pdf`;
+      doc.save(fileName);
+    };
+
     return {
       selectedDateRange,
       selectedStatus,
@@ -810,6 +896,7 @@ export default {
       toastType,
       showNotification,
       handleExportPDF,
+      printReceipt,
     };
   }
 };
